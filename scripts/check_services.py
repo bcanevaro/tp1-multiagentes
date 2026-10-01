@@ -52,7 +52,7 @@ def check_litellm_models(settings: Settings) -> CheckResult:
     problems = [
         f"'{v}' no está en el proxy"
         for v in (settings.LLM_MODEL, settings.EMBEDDING_MODEL)
-        if v not in names
+        if v and v not in names
     ]
     if problems:
         return CheckResult("LiteLLM /models", False, detail + " | " + "; ".join(problems))
@@ -153,7 +153,7 @@ def run_checks(settings: Settings) -> list[CheckResult]:
     results = [check_env(settings)]
     # (nombre, función, variables que necesita para poder correr)
     checks: list[tuple[str, Callable[[Settings], CheckResult], tuple[str, ...]]] = [
-        ("LiteLLM /models", check_litellm_models, _LITELLM + ("LLM_MODEL", "EMBEDDING_MODEL")),
+        ("LiteLLM /models", check_litellm_models, _LITELLM),
         ("LiteLLM chat", check_chat, _LITELLM + ("LLM_MODEL",)),
         ("Salida estructurada", check_structured, _LITELLM + ("LLM_MODEL",)),
         ("Embeddings", check_embeddings, _LITELLM + ("EMBEDDING_MODEL",)),

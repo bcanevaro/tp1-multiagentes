@@ -37,9 +37,12 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
-        env_file_encoding="utf-8",
+        # utf-8-sig: tolera el BOM que agrega el Bloc de notas de Windows.
+        env_file_encoding="utf-8-sig",
         extra="ignore",
         case_sensitive=True,
+        # Una variable vacía en el .env (p. ej. `EMBEDDING_DIM=`) cuenta como no definida.
+        env_ignore_empty=True,
     )
 
     # Proxy LiteLLM
@@ -107,5 +110,5 @@ def get_settings() -> Settings:
     También vuelca `.env` a `os.environ` (sin pisar variables ya definidas), porque
     LangSmith y LangChain leen `LANGSMITH_*` directamente del entorno del proceso.
     """
-    load_dotenv(PROJECT_ROOT / ".env", override=False)
+    load_dotenv(PROJECT_ROOT / ".env", override=False, encoding="utf-8-sig")
     return Settings()
