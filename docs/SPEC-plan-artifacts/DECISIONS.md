@@ -34,3 +34,20 @@ Las decisiones de diseño principales del sistema están en el spec §10 (tomada
 **Context**: El alumno pidió ser consultado ante cada duda de diseño; un subagente no puede consultarlo en vivo.
 **Decision**: Se sigue el protocolo de artefactos del plan, pero la implementación la hace la sesión principal.
 **Consequences**: los artefactos siguen siendo obligatorios: son el registro del proceso y sirven para el oral.
+
+## D-007: Modelos del proxy  (Iteration 1)
+**Context**: El proxy expone 29 modelos (familias Claude, GPT-4.1, GPT-5 y tres de embeddings); la cátedra no fijó uno.
+**Decision** (elegida por el alumno): `LLM_MODEL=gpt-4.1-mini`, `EMBEDDING_MODEL=text-embedding-3-small` (`EMBEDDING_DIM=1536`). Se dejan como valores por defecto en `.env.example` (no son secretos).
+**Rejected**: gpt-4.1 / claude-sonnet-4-5 (más caros por llamada); gpt-5-mini (lento y no acepta temperatura 0); text-embedding-3-large (3072 dims, más caro sin beneficio claro para textos de metadatos cortos).
+**Consequences**: el índice de Pinecone se crea con dimensión 1536; cambiar de modelo de embeddings obliga a recrear el índice y re-ingerir. Si la generación de código falla seguido, evaluar un modelo más capaz solo para ese nodo.
+
+## D-008: PDF sintético generado por código y versionado; PDFs de borde generados en los tests  (Iteration 2)
+**Context**: Se necesitan PDFs con verdad conocida para testear la extracción y valores esperados exactos para la evaluación.
+**Decision**: `scripts/sample_data.py` es la única fuente de los números; `make_sample_pdf.py` genera el PDF con reportlab en modo `invariant` (reproducible) y `sample_truth.json`. El PDF sintético se versiona (es entregable de la consigna); los 9 PDFs de borde se generan en un directorio temporal por sesión de pytest y no se versionan.
+**Rejected**: armar los PDFs a mano en Word (no reproducible, sin verdad exacta); versionar los PDFs de borde (binarios que se desactualizan).
+**Consequences**: si se cambia un dato hay que regenerar el PDF y el truth (`uv run python scripts/make_sample_pdf.py`); `test_generation_is_reproducible` detecta si quedaron desincronizados.
+
+## D-009: Temática y casos del PDF sintético  (Iteration 2)
+**Context**: El PDF debe cubrir los casos de la consigna §5.1, §5.2 y §6.4.
+**Decision** (aprobada por el alumno): "Anuario Estadístico 2023 — Provincia de San Aurelio (ficticia)", 6 cuadros: finanzas 2019-2023 (paréntesis), desempleo por departamento (`%`, `s/d`, sin promedio provincial), salarios (`$`, solo líneas horizontales, sin aclarar nominal/real), producción con encabezado de 2 niveles, población, exportaciones mensuales multipágina (miles de US$). 11 preguntas `syn-01`…`syn-11` aprobadas por el alumno.
+**Consequences**: el Analista debe resolver `syn-06` (promedio ponderado definido en la pregunta) como `answered` y `syn-04` como `partial`.

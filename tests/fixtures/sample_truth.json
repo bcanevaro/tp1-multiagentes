@@ -1,0 +1,837 @@
+{
+  "pdf": "data/sample_pdfs/informe_sintetico.pdf",
+  "page_count": 3,
+  "tables": [
+    {
+      "key": "finanzas",
+      "caption": "Cuadro 1. Ingresos y gastos del sector público provincial. Años 2019-2023. En millones de pesos corrientes",
+      "section_title": "1. Finanzas públicas",
+      "paragraph_before": "El sector público provincial cerró 2023 con un déficit financiero, luego del superávit registrado en 2022. El gasto en ciencia y tecnología mantuvo una participación cercana al 1,1 % del gasto total.",
+      "footnote": "Fuente: Contaduría General de la Provincia (datos ficticios). Nota: los valores negativos se presentan entre paréntesis.",
+      "paragraph_after": "",
+      "columns": [
+        "Concepto",
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023"
+      ],
+      "rows_text": [
+        [
+          "Ingresos totales",
+          "182.450,3",
+          "241.880,7",
+          "368.912,4",
+          "702.115,8",
+          "1.854.320,6"
+        ],
+        [
+          "Gastos totales",
+          "190.120,5",
+          "268.430,2",
+          "375.004,9",
+          "698.540,1",
+          "1.902.775,3"
+        ],
+        [
+          "Gasto en ciencia y tecnología",
+          "2.150,4",
+          "2.874,1",
+          "4.390,8",
+          "8.612,7",
+          "21.940,2"
+        ],
+        [
+          "Resultado financiero",
+          "(7.670,2)",
+          "(26.549,5)",
+          "(6.092,5)",
+          "3.575,7",
+          "(48.454,7)"
+        ]
+      ],
+      "values": [
+        [
+          "Ingresos totales",
+          182450.3,
+          241880.7,
+          368912.4,
+          702115.8,
+          1854320.6
+        ],
+        [
+          "Gastos totales",
+          190120.5,
+          268430.2,
+          375004.9,
+          698540.1,
+          1902775.3
+        ],
+        [
+          "Gasto en ciencia y tecnología",
+          2150.4,
+          2874.1,
+          4390.8,
+          8612.7,
+          21940.2
+        ],
+        [
+          "Resultado financiero",
+          -7670.2,
+          -26549.5,
+          -6092.5,
+          3575.7,
+          -48454.7
+        ]
+      ],
+      "header_rows": 1,
+      "line_style": "grid",
+      "pages": [
+        1
+      ],
+      "n_rows": 4,
+      "n_cols": 6
+    },
+    {
+      "key": "desempleo",
+      "caption": "Cuadro 2. Tasa de desempleo por departamento. Años 2021-2023",
+      "section_title": "2. Mercado de trabajo",
+      "paragraph_before": "La tasa de desempleo descendió en la mayoría de los departamentos durante el período. El departamento Norte registró las tasas más elevadas de la provincia.",
+      "footnote": "Fuente: Encuesta Provincial de Hogares (datos ficticios). Nota: s/d = sin dato. Porcentaje de la población económicamente activa.",
+      "paragraph_after": "Los salarios del sector privado registrado crecieron en todos los sectores, con mayor dinamismo en la industria.",
+      "columns": [
+        "Departamento",
+        "2021",
+        "2022",
+        "2023"
+      ],
+      "rows_text": [
+        [
+          "Capital",
+          "8,4 %",
+          "7,9 %",
+          "7,1 %"
+        ],
+        [
+          "Norte",
+          "10,2 %",
+          "9,6 %",
+          "9,8 %"
+        ],
+        [
+          "Valle Alto",
+          "6,1 %",
+          "5,8 %",
+          "6,4 %"
+        ],
+        [
+          "Llanura",
+          "7,3 %",
+          "7,0 %",
+          "6,6 %"
+        ],
+        [
+          "Costa Sur",
+          "s/d",
+          "8,7 %",
+          "8,2 %"
+        ]
+      ],
+      "values": [
+        [
+          "Capital",
+          8.4,
+          7.9,
+          7.1
+        ],
+        [
+          "Norte",
+          10.2,
+          9.6,
+          9.8
+        ],
+        [
+          "Valle Alto",
+          6.1,
+          5.8,
+          6.4
+        ],
+        [
+          "Llanura",
+          7.3,
+          7.0,
+          6.6
+        ],
+        [
+          "Costa Sur",
+          null,
+          8.7,
+          8.2
+        ]
+      ],
+      "header_rows": 1,
+      "line_style": "grid",
+      "pages": [
+        1
+      ],
+      "n_rows": 5,
+      "n_cols": 4
+    },
+    {
+      "key": "salarios",
+      "caption": "Cuadro 3. Salario bruto promedio mensual por sector de actividad. Años 2021-2023. En pesos",
+      "section_title": "2. Mercado de trabajo",
+      "paragraph_before": "Los salarios del sector privado registrado crecieron en todos los sectores, con mayor dinamismo en la industria.",
+      "footnote": "Fuente: Registro Provincial de Empleo (datos ficticios). Nota: trabajadores asalariados registrados. s/d = sin dato.",
+      "paragraph_after": "",
+      "columns": [
+        "Sector",
+        "2021",
+        "2022",
+        "2023"
+      ],
+      "rows_text": [
+        [
+          "Agro",
+          "s/d",
+          "$ 128.450",
+          "$ 312.780"
+        ],
+        [
+          "Industria",
+          "$ 98.320",
+          "$ 187.640",
+          "$ 451.920"
+        ],
+        [
+          "Comercio",
+          "$ 85.110",
+          "$ 162.870",
+          "$ 389.540"
+        ],
+        [
+          "Servicios",
+          "$ 92.760",
+          "$ 176.310",
+          "$ 418.250"
+        ]
+      ],
+      "values": [
+        [
+          "Agro",
+          null,
+          128450,
+          312780
+        ],
+        [
+          "Industria",
+          98320,
+          187640,
+          451920
+        ],
+        [
+          "Comercio",
+          85110,
+          162870,
+          389540
+        ],
+        [
+          "Servicios",
+          92760,
+          176310,
+          418250
+        ]
+      ],
+      "header_rows": 1,
+      "line_style": "horizontal",
+      "pages": [
+        1
+      ],
+      "n_rows": 4,
+      "n_cols": 4
+    },
+    {
+      "key": "produccion",
+      "caption": "Cuadro 4. Producción de soja y maíz por departamento. Campañas 2022 y 2023. En miles de toneladas",
+      "section_title": "3. Producción agrícola",
+      "paragraph_before": "La sequía afectó la campaña 2023: la producción de soja cayó en todos los departamentos, mientras que el maíz mostró un comportamiento dispar.",
+      "footnote": "Fuente: Ministerio de Producción provincial (datos ficticios).",
+      "paragraph_after": "",
+      "columns": [
+        "Departamento",
+        "Soja | 2022",
+        "Soja | 2023",
+        "Maíz | 2022",
+        "Maíz | 2023"
+      ],
+      "rows_text": [
+        [
+          "Capital",
+          "12,4",
+          "10,1",
+          "8,2",
+          "7,5"
+        ],
+        [
+          "Norte",
+          "845,3",
+          "702,8",
+          "512,6",
+          "488,1"
+        ],
+        [
+          "Valle Alto",
+          "210,7",
+          "198,4",
+          "340,2",
+          "355,9"
+        ],
+        [
+          "Llanura",
+          "1.254,9",
+          "1.087,6",
+          "963,4",
+          "901,2"
+        ],
+        [
+          "Costa Sur",
+          "98,5",
+          "85,3",
+          "120,7",
+          "131,0"
+        ]
+      ],
+      "values": [
+        [
+          "Capital",
+          12.4,
+          10.1,
+          8.2,
+          7.5
+        ],
+        [
+          "Norte",
+          845.3,
+          702.8,
+          512.6,
+          488.1
+        ],
+        [
+          "Valle Alto",
+          210.7,
+          198.4,
+          340.2,
+          355.9
+        ],
+        [
+          "Llanura",
+          1254.9,
+          1087.6,
+          963.4,
+          901.2
+        ],
+        [
+          "Costa Sur",
+          98.5,
+          85.3,
+          120.7,
+          131.0
+        ]
+      ],
+      "header_rows": 2,
+      "line_style": "grid",
+      "pages": [
+        2
+      ],
+      "n_rows": 5,
+      "n_cols": 5
+    },
+    {
+      "key": "poblacion",
+      "caption": "Cuadro 5. Población y superficie por departamento. Año 2023",
+      "section_title": "4. Población",
+      "paragraph_before": "La población provincial se concentra en el departamento Capital, que reúne más de la mitad de los habitantes.",
+      "footnote": "Fuente: proyecciones de población de la Dirección Provincial de Estadística (datos ficticios).",
+      "paragraph_after": "",
+      "columns": [
+        "Departamento",
+        "Población (habitantes)",
+        "Superficie (km²)"
+      ],
+      "rows_text": [
+        [
+          "Capital",
+          "612.450",
+          "1.250"
+        ],
+        [
+          "Norte",
+          "184.300",
+          "18.430"
+        ],
+        [
+          "Valle Alto",
+          "97.820",
+          "9.870"
+        ],
+        [
+          "Llanura",
+          "143.760",
+          "22.610"
+        ],
+        [
+          "Costa Sur",
+          "71.215",
+          "14.920"
+        ]
+      ],
+      "values": [
+        [
+          "Capital",
+          612450,
+          1250
+        ],
+        [
+          "Norte",
+          184300,
+          18430
+        ],
+        [
+          "Valle Alto",
+          97820,
+          9870
+        ],
+        [
+          "Llanura",
+          143760,
+          22610
+        ],
+        [
+          "Costa Sur",
+          71215,
+          14920
+        ]
+      ],
+      "header_rows": 1,
+      "line_style": "grid",
+      "pages": [
+        2
+      ],
+      "n_rows": 5,
+      "n_cols": 3
+    },
+    {
+      "key": "exportaciones",
+      "caption": "Cuadro 6. Exportaciones mensuales por grandes rubros. Años 2022-2023. En miles de dólares estadounidenses (US$)",
+      "section_title": "5. Comercio exterior",
+      "paragraph_before": "El cuadro siguiente presenta la serie mensual de exportaciones de la provincia para los años 2022 y 2023, desagregada por grandes rubros.",
+      "footnote": "Fuente: Dirección Provincial de Comercio Exterior (datos ficticios). Nota: valores FOB.",
+      "paragraph_after": "En 2023 las exportaciones de productos primarios fueron las más afectadas por la caída de la cosecha.",
+      "columns": [
+        "Año",
+        "Mes",
+        "Productos primarios",
+        "Manufacturas de origen agropecuario",
+        "Manufacturas de origen industrial",
+        "Total"
+      ],
+      "rows_text": [
+        [
+          "2022",
+          "Enero",
+          "41.250,3",
+          "28.340,5",
+          "12.450,8",
+          "82.041,6"
+        ],
+        [
+          "2022",
+          "Febrero",
+          "38.720,8",
+          "26.910,2",
+          "11.980,3",
+          "77.611,3"
+        ],
+        [
+          "2022",
+          "Marzo",
+          "45.310,2",
+          "30.120,8",
+          "13.210,6",
+          "88.641,6"
+        ],
+        [
+          "2022",
+          "Abril",
+          "52.870,4",
+          "33.450,1",
+          "13.870,2",
+          "100.190,7"
+        ],
+        [
+          "2022",
+          "Mayo",
+          "61.240,9",
+          "36.870,4",
+          "14.120,5",
+          "112.231,8"
+        ],
+        [
+          "2022",
+          "Junio",
+          "58.930,1",
+          "35.210,9",
+          "13.650,9",
+          "107.791,9"
+        ],
+        [
+          "2022",
+          "Julio",
+          "49.870,6",
+          "31.980,3",
+          "12.980,4",
+          "94.831,3"
+        ],
+        [
+          "2022",
+          "Agosto",
+          "44.120,3",
+          "29.870,6",
+          "12.340,7",
+          "86.331,6"
+        ],
+        [
+          "2022",
+          "Septiembre",
+          "40.310,7",
+          "27.650,2",
+          "13.010,2",
+          "80.971,1"
+        ],
+        [
+          "2022",
+          "Octubre",
+          "39.850,2",
+          "28.120,7",
+          "13.450,6",
+          "81.421,5"
+        ],
+        [
+          "2022",
+          "Noviembre",
+          "42.730,5",
+          "29.940,1",
+          "13.890,1",
+          "86.560,7"
+        ],
+        [
+          "2022",
+          "Diciembre",
+          "47.210,8",
+          "32.010,5",
+          "14.210,3",
+          "93.431,6"
+        ],
+        [
+          "2023",
+          "Enero",
+          "35.120,4",
+          "25.120,9",
+          "12.980,1",
+          "73.221,4"
+        ],
+        [
+          "2023",
+          "Febrero",
+          "31.870,2",
+          "23.870,4",
+          "12.310,6",
+          "68.051,2"
+        ],
+        [
+          "2023",
+          "Marzo",
+          "37.940,6",
+          "26.940,2",
+          "13.640,2",
+          "78.521,0"
+        ],
+        [
+          "2023",
+          "Abril",
+          "42.310,8",
+          "29.310,6",
+          "14.210,8",
+          "85.832,2"
+        ],
+        [
+          "2023",
+          "Mayo",
+          "48.760,3",
+          "32.120,8",
+          "14.590,3",
+          "95.471,4"
+        ],
+        [
+          "2023",
+          "Junio",
+          "46.120,5",
+          "30.980,1",
+          "14.020,7",
+          "91.121,3"
+        ],
+        [
+          "2023",
+          "Julio",
+          "40.230,9",
+          "28.430,7",
+          "13.450,2",
+          "82.111,8"
+        ],
+        [
+          "2023",
+          "Agosto",
+          "36.870,1",
+          "26.210,3",
+          "12.870,9",
+          "75.951,3"
+        ],
+        [
+          "2023",
+          "Septiembre",
+          "34.120,6",
+          "24.980,6",
+          "13.320,4",
+          "72.421,6"
+        ],
+        [
+          "2023",
+          "Octubre",
+          "33.980,4",
+          "25.340,2",
+          "13.780,6",
+          "73.101,2"
+        ],
+        [
+          "2023",
+          "Noviembre",
+          "36.210,7",
+          "26.870,5",
+          "14.150,2",
+          "77.231,4"
+        ],
+        [
+          "2023",
+          "Diciembre",
+          "40.120,3",
+          "28.910,4",
+          "14.620,8",
+          "83.651,5"
+        ]
+      ],
+      "values": [
+        [
+          2022,
+          "Enero",
+          41250.3,
+          28340.5,
+          12450.8,
+          82041.6
+        ],
+        [
+          2022,
+          "Febrero",
+          38720.8,
+          26910.2,
+          11980.3,
+          77611.3
+        ],
+        [
+          2022,
+          "Marzo",
+          45310.2,
+          30120.8,
+          13210.6,
+          88641.6
+        ],
+        [
+          2022,
+          "Abril",
+          52870.4,
+          33450.1,
+          13870.2,
+          100190.7
+        ],
+        [
+          2022,
+          "Mayo",
+          61240.9,
+          36870.4,
+          14120.5,
+          112231.8
+        ],
+        [
+          2022,
+          "Junio",
+          58930.1,
+          35210.9,
+          13650.9,
+          107791.9
+        ],
+        [
+          2022,
+          "Julio",
+          49870.6,
+          31980.3,
+          12980.4,
+          94831.3
+        ],
+        [
+          2022,
+          "Agosto",
+          44120.3,
+          29870.6,
+          12340.7,
+          86331.6
+        ],
+        [
+          2022,
+          "Septiembre",
+          40310.7,
+          27650.2,
+          13010.2,
+          80971.1
+        ],
+        [
+          2022,
+          "Octubre",
+          39850.2,
+          28120.7,
+          13450.6,
+          81421.5
+        ],
+        [
+          2022,
+          "Noviembre",
+          42730.5,
+          29940.1,
+          13890.1,
+          86560.7
+        ],
+        [
+          2022,
+          "Diciembre",
+          47210.8,
+          32010.5,
+          14210.3,
+          93431.6
+        ],
+        [
+          2023,
+          "Enero",
+          35120.4,
+          25120.9,
+          12980.1,
+          73221.4
+        ],
+        [
+          2023,
+          "Febrero",
+          31870.2,
+          23870.4,
+          12310.6,
+          68051.2
+        ],
+        [
+          2023,
+          "Marzo",
+          37940.6,
+          26940.2,
+          13640.2,
+          78521.0
+        ],
+        [
+          2023,
+          "Abril",
+          42310.8,
+          29310.6,
+          14210.8,
+          85832.2
+        ],
+        [
+          2023,
+          "Mayo",
+          48760.3,
+          32120.8,
+          14590.3,
+          95471.4
+        ],
+        [
+          2023,
+          "Junio",
+          46120.5,
+          30980.1,
+          14020.7,
+          91121.3
+        ],
+        [
+          2023,
+          "Julio",
+          40230.9,
+          28430.7,
+          13450.2,
+          82111.8
+        ],
+        [
+          2023,
+          "Agosto",
+          36870.1,
+          26210.3,
+          12870.9,
+          75951.3
+        ],
+        [
+          2023,
+          "Septiembre",
+          34120.6,
+          24980.6,
+          13320.4,
+          72421.6
+        ],
+        [
+          2023,
+          "Octubre",
+          33980.4,
+          25340.2,
+          13780.6,
+          73101.2
+        ],
+        [
+          2023,
+          "Noviembre",
+          36210.7,
+          26870.5,
+          14150.2,
+          77231.4
+        ],
+        [
+          2023,
+          "Diciembre",
+          40120.3,
+          28910.4,
+          14620.8,
+          83651.5
+        ]
+      ],
+      "header_rows": 1,
+      "line_style": "grid",
+      "pages": [
+        2,
+        3
+      ],
+      "n_rows": 24,
+      "n_cols": 6
+    }
+  ]
+}

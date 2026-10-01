@@ -46,3 +46,11 @@ def make_settings(tmp_path: Path) -> Callable[..., Settings]:
         return Settings(_env_file=None, **values)  # type: ignore[call-arg]
 
     return _make
+
+
+@pytest.fixture(scope="session")
+def edge_pdfs(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
+    """PDFs de casos borde generados por `scripts/make_test_fixtures.py` (una vez por sesión)."""
+    from scripts.make_test_fixtures import build_all
+
+    return build_all(tmp_path_factory.mktemp("edge_pdfs"))

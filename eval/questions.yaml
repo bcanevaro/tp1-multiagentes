@@ -1,0 +1,132 @@
+# Preguntas de prueba del Analista (consigna §9.2).
+#
+# Campos:
+#   id               identificador estable (se usa como metadato de la traza en LangSmith)
+#   doc              PDF de data/sample_pdfs/ que tiene que estar ingerido
+#   question         pregunta en lenguaje natural
+#   expected_status  answered | partial | cannot_answer
+#   expected_values  resultados numéricos esperados (vacío en cannot_answer). Cada uno tiene
+#                    `value` (un número) o `values` (un número por categoría), y `unit`.
+#   expected_missing qué dato falta (partial / cannot_answer), en palabras
+#   tables           tablas que debería usar (por su número de cuadro en el PDF)
+#   kind             qué tipo de caso cubre
+#
+# Los valores esperados del PDF sintético se verifican contra scripts/sample_data.py en
+# tests/test_questions.py. Tolerancia de corrección (BR-030): 0,5 % relativa.
+
+questions:
+  - id: syn-01
+    doc: informe_sintetico.pdf
+    question: "¿Cuál fue el crecimiento interanual promedio de los ingresos totales del sector público entre 2019 y 2023?"
+    expected_status: answered
+    expected_values:
+      - label: "Crecimiento interanual promedio de los ingresos totales 2019-2023"
+        value: 84.8792
+        unit: "%"
+    tables: ["Cuadro 1"]
+    kind: una tabla; promedio de variaciones interanuales (2020, 2021, 2022 y 2023)
+    notes: "Variaciones: 32,57 %; 52,52 %; 90,32 %; 164,10 %. Promedio aritmético."
+
+  - id: syn-02
+    doc: informe_sintetico.pdf
+    question: "¿Qué proporción de los gastos totales representó el gasto en ciencia y tecnología en cada año?"
+    expected_status: answered
+    expected_values:
+      - label: "Gasto en ciencia y tecnología / gastos totales"
+        unit: "%"
+        values: {"2019": 1.1311, "2020": 1.0707, "2021": 1.1709, "2022": 1.2330, "2023": 1.1531}
+    tables: ["Cuadro 1"]
+    kind: una tabla; resultado por categoría
+
+  - id: syn-03
+    doc: informe_sintetico.pdf
+    question: "¿Cuál fue el resultado financiero del sector público provincial en 2024?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "La tabla de finanzas públicas cubre 2019-2023; 2024 no está disponible."
+    tables: ["Cuadro 1"]
+    kind: falta un período
+
+  - id: syn-04
+    doc: informe_sintetico.pdf
+    question: "¿Qué departamento tuvo la tasa de desempleo más alta en 2023, y por cuánto superó al promedio provincial?"
+    expected_status: partial
+    expected_values:
+      - label: "Departamento con mayor desempleo en 2023 (Norte)"
+        value: 9.8
+        unit: "%"
+    expected_missing: "Ninguna tabla informa un promedio provincial de desempleo; no se reemplaza por el promedio de los departamentos."
+    tables: ["Cuadro 2"]
+    kind: falta un valor de comparación
+
+  - id: syn-05
+    doc: informe_sintetico.pdf
+    question: "¿Cuál fue la producción de soja por habitante en cada departamento en 2023?"
+    expected_status: answered
+    expected_values:
+      - label: "Producción de soja 2023 por habitante"
+        unit: "toneladas por habitante"
+        values: {"Capital": 0.0165, "Norte": 3.8133, "Valle Alto": 2.0282, "Llanura": 7.5654, "Costa Sur": 1.1978}
+    tables: ["Cuadro 4", "Cuadro 5"]
+    kind: multitabla; cambio de escala (miles de toneladas -> toneladas)
+
+  - id: syn-06
+    doc: informe_sintetico.pdf
+    question: "¿Cuál fue la tasa de desempleo de la provincia en 2023 calculada como el promedio de los departamentos ponderado por su población?"
+    expected_status: answered
+    expected_values:
+      - label: "Desempleo 2023 ponderado por población"
+        value: 7.4926
+        unit: "%"
+    tables: ["Cuadro 2", "Cuadro 5"]
+    kind: multitabla; la pregunta define explícitamente cómo calcular el promedio (excepción de BR-013)
+
+  - id: syn-07
+    doc: informe_sintetico.pdf
+    question: "¿Qué porcentaje de los ingresos totales del sector público de 2023 representaron las exportaciones de ese año expresadas en pesos?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "Las exportaciones están en US$ y los ingresos en pesos; no hay ninguna tabla con el tipo de cambio."
+    tables: ["Cuadro 1", "Cuadro 6"]
+    kind: conversión de unidades que requiere datos externos
+
+  - id: syn-08
+    doc: informe_sintetico.pdf
+    question: "¿Cuál fue el total de exportaciones de la provincia en 2023, en millones de dólares?"
+    expected_status: answered
+    expected_values:
+      - label: "Exportaciones totales 2023"
+        value: 956.6873
+        unit: "millones de US$"
+    tables: ["Cuadro 6"]
+    kind: tabla multipágina; suma de los 12 meses y cambio de escala (miles -> millones)
+
+  - id: syn-09
+    doc: informe_sintetico.pdf
+    question: "¿Cuánto creció el salario real promedio del sector industria entre 2021 y 2023?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "La tabla de salarios no indica si los valores son nominales o reales y no hay un índice de precios para deflactar."
+    tables: ["Cuadro 3"]
+    kind: ambigüedad nominal/real
+
+  - id: syn-10
+    doc: informe_sintetico.pdf
+    question: "¿Cuántos turistas visitaron la provincia en 2023?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "Ninguna tabla indexada tiene datos de turismo."
+    tables: []
+    kind: ninguna tabla relacionada
+
+  - id: syn-11
+    doc: informe_sintetico.pdf
+    question: "¿Cuál fue la tasa de desempleo del departamento Río Seco en 2023?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "La tabla de desempleo incluye Capital, Norte, Valle Alto, Llanura y Costa Sur; Río Seco no está."
+    tables: ["Cuadro 2"]
+    kind: falta una entidad
+
+  # Preguntas sobre el PDF real de INDEC (indec_ica.pdf): se agregan en la Iteración 8,
+  # con los valores esperados verificados a mano contra el PDF.
