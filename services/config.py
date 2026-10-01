@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     # Pinecone
     PINECONE_API_KEY: str | None = None
     PINECONE_INDEX_NAME: str | None = "mas-2026s2-tables"
+    # El plan gratuito Starter solo admite índices serverless en aws/us-east-1.
+    PINECONE_CLOUD: str = "aws"
+    PINECONE_REGION: str = "us-east-1"
 
     # LangSmith
     LANGSMITH_TRACING: bool = True

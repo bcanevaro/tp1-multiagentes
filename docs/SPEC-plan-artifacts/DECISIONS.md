@@ -76,3 +76,26 @@ Las decisiones de diseño principales del sistema están en el spec §10 (tomada
 **Context**: El Cuadro 10 de INDEC empieza en la página siguiente al 9 con la misma estructura; la regla literal de la consigna los uniría.
 **Decision** (spec v0.3, FR-007): no es continuación si hay un epígrafe ("Cuadro/Tabla/Gráfico N") encima de la tabla en la página N+1, o si la tabla de la página N tiene debajo un bloque "Fuente"/"Nota". Solo se consideran la última tabla de la página N y la primera de la N+1.
 **Rejected**: excluir el 8 % superior de la página como encabezado (el epígrafe del Cuadro 10 está a 55 pt del borde).
+
+## D-015: El estado de la Ingesta es JSON (Pydantic), sin DataFrames  (Iteration 4)
+**Context**: El spec pide estado serializable; LangSmith muestra el estado de cada nodo.
+**Decision** (elegida por el alumno): las tablas viajan como `RawTableData` y `TableDraft` (filas como listas de `float | str | None`, con `dtypes`). `TableDraft.to_dataframe()` reconstruye el DataFrame cuando hace falta. El `LoadedPdf` (bloques de texto) no va al estado: se recalcula con un `lru_cache` por (ruta, mtime).
+**Rejected**: archivos temporales con rutas en el estado (trazas opacas, limpieza).
+**Consequences**: las trazas muestran las tablas completas (son chicas en este TP).
+
+## D-016: Una llamada al LLM por tabla, en paralelo, detrás de un `Annotator` inyectable  (Iteration 4)
+**Decision** (elegida por el alumno): `llm_annotator` usa `with_structured(...).batch(..., max_concurrency=4, return_exceptions=True)`. Una excepción del LLM cuenta como intento fallido de esa tabla (se reintenta igual que un error de validación). Los tests inyectan `FakeAnnotator`, sin LLM.
+**Consequences**: cada llamada es un span hijo de `enrich` en LangSmith (se pasa el `config` del nodo).
+
+## D-017: Copia del PDF original en `DATA_DIR/pdfs/{doc_id}.pdf`  (Iteration 4)
+**Decision** (elegida por el alumno): se guarda al indexar. Habilita descargar el PDF desde Explorar y re-ingerir sin el archivo original.
+
+## D-018: Orden de escritura en `persist_and_index`  (Iteration 4)
+**Decision**: primero se obtiene el índice (si la dimensión no coincide se corta sin escribir nada, FR-064) y se calculan todos los embeddings; recién después se borra lo anterior del documento (Pinecone por prefijo `"{doc_id}-t"` y almacén local, BR-006) y se escribe lo nuevo. Los `table_id` usan el orden de la tabla en el documento aunque otras fallen, así son estables.
+**Consequences**: si Pinecone falla a mitad del upsert, el documento queda parcialmente indexado; re-ingerir lo corrige.
+
+## D-019: BR-004b — nominal/real solo con respaldo textual  (Iteration 4)
+**Context**: En la primera ingesta real, `gpt-4.1-mini` describió los salarios como "pesos corrientes" aunque el PDF no lo dice; eso anularía la detección de ambigüedad de BR-014 (pregunta syn-09).
+**Decision** (elegida por el alumno): instrucción explícita en el prompt + validación determinística: `value_type` nominal/real o las palabras corriente/constante/nominal/real en la descripción exigen la misma familia de palabras en epígrafe, sección, párrafos, notas o nombres de columna; si no, error BR-004b y reintento.
+**Rejected**: solo prompt (sin garantía); dejarlo como limitación.
+**Consequences**: puede generar algún reintento extra; una descripción honesta usa "no indica si los montos están ajustados por inflación".

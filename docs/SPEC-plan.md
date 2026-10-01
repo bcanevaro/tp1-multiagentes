@@ -152,7 +152,7 @@ the spec — artifacts carry state, the plan carries authority.
 - Artefactos: `CONTEXT.md` (interfaces de store, index y grafo), `DECISIONS.md`, `iterations/04-agente-ingesta.md`.
 
 **Success criteria**:
-- VC-002b, VC-011, VC-012, VC-013, VC-014, VC-014b, VC-015, VC-016, VC-017, VC-018, VC-019, VC-020, VC-021: tests que pasan con `uv run pytest tests/ingestion -q` usando fakes.
+- VC-002b, VC-011, VC-012, VC-013, VC-014, VC-014b, VC-015, VC-015b, VC-016, VC-017, VC-018, VC-019, VC-020, VC-021: tests que pasan con `uv run pytest tests/ingestion -q` usando fakes.
 - VC-065c (parte de lógica): test con índice simulado de dimensión distinta → error y 0 vectores escritos.
 - Test: ningún registro de metadatos serializado supera 38 KB con una tabla de 5.000 filas (NFR-006).
 - **[usuario]** `uv run python -m agents.ingestion.cli data/sample_pdfs/informe_sintetico.pdf` → todas las tablas indexadas, tiempo ≤ 3 min (NFR-008); repetir el comando → mismos IDs y misma cantidad de vectores en Pinecone (VC-020 real); con `LLM_CACHE=true` la segunda corrida no hace llamadas nuevas al LLM (NFR-009); la traza aparece en LangSmith como `ingest:informe_sintetico.pdf` con un span por nodo (VC-066, parte de ingesta). Ingerir también `indec_ica.pdf` y registrar resultados.
@@ -360,6 +360,7 @@ the spec — artifacts carry state, the plan carries authority.
 | BR-002 | VC-013 | 4 | pytest |
 | BR-003 | VC-014, VC-014b | 4 | pytest |
 | BR-004 | VC-015 | 4 | pytest |
+| BR-004b | VC-015b | 4 | pytest |
 | BR-005 | VC-020 | 4 | pytest |
 | BR-006 | VC-021 | 4 | pytest |
 | BR-010 | VC-041 | 6 | pytest |

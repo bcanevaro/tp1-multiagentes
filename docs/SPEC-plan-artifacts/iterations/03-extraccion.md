@@ -1,7 +1,7 @@
 # Iteración 03 — Extracción determinística
 
-**Estado**: código completo y verificado en el contenedor; **pendiente el criterio [usuario]** (correr el diagnóstico sobre INDEC y la suite en Windows).
-**Commit**: lo hace el alumno con el mensaje `Extracción determinística de tablas: normalización, unión multipágina, contexto y avisos`. SHA: _pendiente_.
+**Estado**: COMPLETA (todos los criterios PASS, incluidos los [usuario]).
+**Commit**: lo hace el alumno con el mensaje `Extracción determinística de tablas: normalización, unión multipágina, contexto y avisos`. SHA: `16a5d5c74311898da8180f205f333a22328084ab`.
 
 ## Resultados de criterios
 | Criterio | Comando / test | Resultado |
@@ -21,7 +21,7 @@
 | VC-010 | `tests/ingestion/test_context.py::test_vc010_context_matches_truth[*]` | PASS (6/6) |
 | Suite completa | `uv run pytest -q` | PASS (104 passed, ~15 s) |
 | Lint / tipos | `uv run ruff check .`, `uv run mypy agents services` | PASS |
-| [usuario] diagnóstico INDEC + suite en Windows | `uv run python -m agents.ingestion.extract data/sample_pdfs/indec_ica.pdf`, `uv run pytest -q` | _pendiente_ |
+| [usuario] diagnóstico INDEC + suite en Windows | `uv run python -m agents.ingestion.extract data/sample_pdfs/indec_ica.pdf`, `uv run pytest -q` | PASS: 11 tablas idénticas a las del contenedor; 104 passed. Diferencia menor: en el Cuadro 5 dos columnas salen sin el sufijo `\| %` en Windows/Python 3.14 (no afecta tests) |
 
 ## Archivos
 Agregados: `agents/ingestion/{pdf_loader,extract,normalize,merge,context}.py`, `tests/ingestion/{__init__,conftest,test_loader,test_extract,test_normalize,test_context}.py`, `data/sample_pdfs/indec_ica.pdf`, este registro.

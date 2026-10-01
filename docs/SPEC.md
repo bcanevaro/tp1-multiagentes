@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 0.3 |
+| Versión | 0.4 |
 | Última actualización | 2026-10-01 |
 | Estado | Aprobado por el alumno |
 | Owner | Alumno — materia electiva Sistemas Multiagentes |
@@ -121,6 +121,7 @@ Prioridad MoSCoW: **M** = Must, **S** = Should, **C** = Could.
 - **BR-002 Columna de encabezados de fila válida** — `row_header_column`, elegida por el LLM, es nula o coincide exactamente con el nombre de una columna de tipo texto del DataFrame. `row_headers` no lo genera el LLM: lo completa el sistema con los valores no nulos de esa columna. *Motivo:* evita entidades inventadas por el LLM. *Excepciones:* si `row_header_column` es nula, `row_headers` es una lista vacía.
 - **BR-003 Nombre y descripción útiles** — `name` tiene al menos 3 caracteres y no es genérico (no coincide con "Tabla", "Tabla N", "Table", "Cuadro N" sin más texto); `description` tiene entre 2 y 4 oraciones (contadas como fragmentos no vacíos terminados en `.`, `?` o `!`, sin cortar en números decimales ni abreviaturas de una letra). *Motivo:* la recuperación depende de ellos, y la consigna (§5.2) pide una descripción de 2 a 4 oraciones sobre qué mide la tabla, sus unidades, período y alcance.
 - **BR-004 Unidad explícita** — Cada columna numérica tiene `unit` distinto de vacío; si el contexto no permite deducirla, el valor es `"desconocida"` (valor permitido, no error). *Motivo:* BR-012 necesita distinguir unidad conocida de desconocida.
+- **BR-004b Nominal/real con respaldo** — Si los metadatos marcan una columna como `value_type = "nominal"` o `"real"`, o si la descripción usa las palabras "corriente(s)", "constante(s)", "nominal(es)" o "real(es)", esa misma palabra (o su par: corrientes↔nominal, constantes↔real) tiene que aparecer en el texto del documento asociado a la tabla (epígrafe, título de sección, párrafos, notas al pie o nombres de columna). Si no, es un error de validación. *Motivo:* el LLM tiende a suponer "pesos corrientes"; si lo inventa, BR-014 deja de detectar la ambigüedad. *Excepciones:* ninguna.
 - **BR-005 Identificadores idempotentes** — `doc_id` = primeros 16 caracteres hex del SHA-256 de los bytes del PDF; `table_id` = `{doc_id}-t{NN}`, con NN el orden de la tabla lógica en el documento (01, 02, …). *Motivo:* re-ingerir el mismo contenido produce los mismos IDs aunque cambie el nombre del archivo.
 - **BR-006 Reemplazo por documento** — Al indexar un documento, primero se eliminan de Pinecone y del almacén todas las tablas con ese `doc_id`, y luego se escriben las nuevas. *Motivo:* evita tablas obsoletas si la nueva ingesta detecta menos tablas.
 - **BR-010 Decisión de estado** — Sea S el conjunto de subpreguntas. Una subpregunta está *resuelta* si está cubierta por la selección (FR-023/FR-024) **y** `CodeResult.results` contiene un valor para ella. Entonces: `answered` si todas están resueltas; `partial` si al menos una está resuelta y al menos una no; `cannot_answer` si ninguna lo está. *Motivo:* el estado lo decide la lógica, no la redacción. *Excepciones:* FR-030.
@@ -242,6 +243,7 @@ Analista:  understand → retrieve ─(índice vacío)→ decide_status
 - VC-014: Validar `name = "Tabla 3"` → error que nombra BR-003. *(BR-003)*
 - VC-014b: Validar `description` con 1 oración y con 5 oraciones → error que nombra BR-003 en ambos casos; con 2 oraciones que incluyen "12.5 %" → sin error. *(BR-003, borde)*
 - VC-015: Validar una columna numérica con `unit = ""` → error; con `unit = "desconocida"` → sin error. *(BR-004)*
+- VC-015b: Validar una tabla de salarios cuyo contexto no menciona corrientes/constantes, con `value_type = "nominal"` en una columna o con "pesos corrientes" en la descripción → error que nombra BR-004b; la misma anotación con el epígrafe "En pesos corrientes" → sin error. *(BR-004b)*
 - VC-016: LLM simulado que devuelve metadatos inválidos la primera vez y válidos la segunda → la tabla se indexa y la traza muestra 2 llamadas a `enrich`; las tablas que eran válidas desde el inicio se enriquecen 1 sola vez. *(FR-012)*
 - VC-017: LLM simulado que siempre devuelve metadatos inválidos → `enrich` se llama `INGEST_MAX_RETRIES + 1` veces, la tabla no se indexa y la UI muestra el aviso con sus errores. *(FR-013, NFR-004)*
 - VC-018: Ingerir el PDF sintético → existen un `.parquet` y un `.json` por tabla indexada, y el `.parquet` recargado es igual al DataFrame normalizado. *(FR-014)*
@@ -336,6 +338,7 @@ Ninguna. (OQ-1, campos mínimos de metadatos, se resolvió con la consigna compl
 
 ## Changelog
 
+- **0.4 (2026-10-01)** — Nueva BR-004b (VC-015b): nominal/real solo con respaldo en el documento; surgió de la primera ingesta real (el LLM afirmó "pesos corrientes" en el cuadro de salarios, que no lo dice). Decisión del alumno.
 - **0.3 (2026-10-01)** — Con el PDF real de INDEC: FR-005 interpreta `-` según los signos convencionales del documento (decisión del alumno) y suma `///`, `.`, `…`; FR-006 quita `*`; FR-007 no une tablas separadas por un epígrafe o una "Fuente/Nota"; nueva FR-008b filtra detecciones que no son tablas; FR-003 exige detectar tablas con solo líneas horizontales; el PDF real tiene 36 páginas (el límite de 30 era propio del spec, no de la consigna). VCs nuevos: VC-005b, VC-008b, VC-009c, VC-009d.
 - **0.2 (2026-10-01)** — Consigna completa recibida: se resuelve OQ-1; BR-003 exige descripción de 2 a 4 oraciones (VC-014b); §7.2 y FR-015 referencian los mínimos de la consigna §5.2. Se agrega `LLM_STRUCTURED_METHOD` a §7.1 (D-003). Segundo PDF definido: INDEC ICA.
 - **0.1 (2026-10-01)** — Borrador inicial aprobado por el alumno.
