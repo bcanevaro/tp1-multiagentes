@@ -11,7 +11,7 @@ Se construye un sistema de dos agentes LangGraph (Ingesta y Analista) con UI Str
 
 - El código se escribe y se testea (sin red) en la copia de trabajo del contenedor. Los servicios reales (proxy LiteLLM de la universidad, Pinecone, LangSmith) y Docker **no** son accesibles desde el contenedor: los criterios marcados **[usuario]** los ejecuta el alumno en su PC Windows con el comando indicado, y la iteración no se cierra hasta que informa el resultado.
 - **Commits:** los hace el alumno. Al final de cada iteración se copian a su carpeta los archivos nuevos y modificados (y se le indica cuáles borrar, si los hay), y el alumno hace el commit con el mensaje sugerido de la iteración. La copia de trabajo del contenedor no tiene historial git propio: el repo de referencia es el del alumno. El SHA del registro de iteración es el que informa el alumno después de commitear.
-- **Ambigüedad marcada:** OQ-1 del spec (campos mínimos de metadatos) sigue abierta. Se implementa §7.2 tal como está; si la cátedra agrega campos, se suman a `TableMetadata` en la iteración que esté en curso.
+- OQ-1 del spec quedó resuelta con la consigna completa (spec v0.2); el plan no tiene ambigüedades abiertas.
 
 ## Artifact Protocol
 
@@ -152,7 +152,7 @@ the spec — artifacts carry state, the plan carries authority.
 - Artefactos: `CONTEXT.md` (interfaces de store, index y grafo), `DECISIONS.md`, `iterations/04-agente-ingesta.md`.
 
 **Success criteria**:
-- VC-002b, VC-011, VC-012, VC-013, VC-014, VC-015, VC-016, VC-017, VC-018, VC-019, VC-020, VC-021: tests que pasan con `uv run pytest tests/ingestion -q` usando fakes.
+- VC-002b, VC-011, VC-012, VC-013, VC-014, VC-014b, VC-015, VC-016, VC-017, VC-018, VC-019, VC-020, VC-021: tests que pasan con `uv run pytest tests/ingestion -q` usando fakes.
 - VC-065c (parte de lógica): test con índice simulado de dimensión distinta → error y 0 vectores escritos.
 - Test: ningún registro de metadatos serializado supera 38 KB con una tabla de 5.000 filas (NFR-006).
 - **[usuario]** `uv run python -m agents.ingestion.cli data/sample_pdfs/informe_sintetico.pdf` → todas las tablas indexadas, tiempo ≤ 3 min (NFR-008); repetir el comando → mismos IDs y misma cantidad de vectores en Pinecone (VC-020 real); con `LLM_CACHE=true` la segunda corrida no hace llamadas nuevas al LLM (NFR-009); la traza aparece en LangSmith como `ingest:informe_sintetico.pdf` con un span por nodo (VC-066, parte de ingesta). Ingerir también `indec_ica.pdf` y registrar resultados.
@@ -357,7 +357,7 @@ the spec — artifacts carry state, the plan carries authority.
 | FR-065 | VC-065d | 1 | pytest |
 | BR-001 | VC-012 | 4 | pytest |
 | BR-002 | VC-013 | 4 | pytest |
-| BR-003 | VC-014 | 4 | pytest |
+| BR-003 | VC-014, VC-014b | 4 | pytest |
 | BR-004 | VC-015 | 4 | pytest |
 | BR-005 | VC-020 | 4 | pytest |
 | BR-006 | VC-021 | 4 | pytest |

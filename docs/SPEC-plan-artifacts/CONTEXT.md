@@ -56,5 +56,5 @@ uv run streamlit run app.py
 ## Known gaps
 - Agentes, almacén, Pinecone, sandbox y UI real: iteraciones 3 a 7.
 - PDF sintético y fixtures: iteración 2. PDF de INDEC: lo agrega el alumno (necesario en iteración 3).
-- OQ-1 del spec (campos mínimos de metadatos de la cátedra) sigue abierta; impacta la iteración 4.
+- OQ-1 resuelta con la consigna completa (spec v0.2): BR-003 exige descripción de 2 a 4 oraciones.
 - Resultado real de `check_services.py` pendiente de la PC del alumno (método de salida estructurada y `EMBEDDING_DIM`).
