@@ -2,9 +2,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versión | 0.1 (borrador para revisión) |
+| Versión | 0.2 |
 | Última actualización | 2026-10-01 |
-| Estado | Borrador |
+| Estado | Aprobado por el alumno |
 | Owner | Alumno — materia electiva Sistemas Multiagentes |
 | Fuente | Consigna "Trabajo práctico — QA multiagente sobre tablas en PDFs" |
 
@@ -64,7 +64,7 @@ Prioridad MoSCoW: **M** = Must, **S** = Should, **C** = Could.
 - **FR-012 (M) Reintento del enriquecimiento** — Dado un `TableMetadata` con errores de validación, cuando quedan reintentos (ver NFR-004), entonces se vuelve a llamar al LLM incluyendo en el prompt la lista de errores, y solo se reintentan las tablas inválidas.
 - **FR-013 (M) Agotamiento de reintentos de ingesta** — Dada una tabla que sigue inválida tras el último reintento, cuando termina el ciclo, entonces no se indexa, y la UI muestra un aviso con el nombre provisional, la página y los errores.
 - **FR-014 (M) Persistencia de datos** — Dada una tabla válida, cuando se persiste, entonces se escribe `data/store/tables/{table_id}.parquet` con el DataFrame normalizado y `data/store/tables/{table_id}.json` con su `TableMetadata`.
-- **FR-015 (M) Indexación** — Dada una tabla válida, cuando se indexa, entonces se hace upsert en Pinecone de **un** vector cuyo texto embebido es la concatenación de nombre, descripción, nombres y descripciones de columnas, encabezados de fila, períodos, entidades y título de sección; y cuyos metadatos incluyen los campos de §7.3.
+- **FR-015 (M) Indexación** — Dada una tabla válida, cuando se indexa, entonces se hace upsert en Pinecone de **un** vector cuyo texto embebido es la concatenación de nombre, descripción, nombres y descripciones de columnas y encabezados de fila (mínimo de la consigna §5.2), más períodos, entidades y título de sección; y cuyos metadatos incluyen los campos de §7.3.
 - **FR-016 (M) Re-ingesta idempotente** — Dado un PDF ya ingerido, cuando se vuelve a ingerir (aunque tenga otro nombre de archivo), entonces Pinecone y el almacén contienen exactamente las tablas de la última ingesta de ese documento: sin duplicados y sin tablas obsoletas de la ingesta anterior.
 - **FR-017 (M) Resumen de ingesta en la UI** — Dada una ingesta terminada, cuando se muestra el resultado, entonces por cada tabla indexada se ve: nombre, descripción, encabezados de columna, encabezados de fila, vista previa de las primeras 5 filas y páginas de origen.
 - **FR-018 (M) Progreso en streaming** — Dada una ingesta en curso, cuando cada nodo del grafo termina, entonces la UI muestra el nombre del nodo y un resumen de una línea (por ejemplo "extract_tables: 4 tablas detectadas en 6 páginas").
@@ -118,7 +118,7 @@ Prioridad MoSCoW: **M** = Must, **S** = Should, **C** = Could.
 
 - **BR-001 Columnas consistentes** — `TableMetadata.columns` tiene exactamente una entrada por columna del DataFrame, y cada `columns[i].name` coincide exactamente con el nombre de la columna i. *Motivo:* el generador de código depende de nombres exactos. *Excepciones:* ninguna.
 - **BR-002 Columna de encabezados de fila válida** — `row_header_column`, elegida por el LLM, es nula o coincide exactamente con el nombre de una columna de tipo texto del DataFrame. `row_headers` no lo genera el LLM: lo completa el sistema con los valores no nulos de esa columna. *Motivo:* evita entidades inventadas por el LLM. *Excepciones:* si `row_header_column` es nula, `row_headers` es una lista vacía.
-- **BR-003 Campos obligatorios no vacíos** — `name` y `description` tienen al menos 3 caracteres y `name` no es genérico (no coincide con "Tabla", "Tabla N", "Table", "Cuadro N" sin más texto). *Motivo:* la recuperación depende de ellos.
+- **BR-003 Nombre y descripción útiles** — `name` tiene al menos 3 caracteres y no es genérico (no coincide con "Tabla", "Tabla N", "Table", "Cuadro N" sin más texto); `description` tiene entre 2 y 4 oraciones (contadas como fragmentos no vacíos terminados en `.`, `?` o `!`, sin cortar en números decimales ni abreviaturas de una letra). *Motivo:* la recuperación depende de ellos, y la consigna (§5.2) pide una descripción de 2 a 4 oraciones sobre qué mide la tabla, sus unidades, período y alcance.
 - **BR-004 Unidad explícita** — Cada columna numérica tiene `unit` distinto de vacío; si el contexto no permite deducirla, el valor es `"desconocida"` (valor permitido, no error). *Motivo:* BR-012 necesita distinguir unidad conocida de desconocida.
 - **BR-005 Identificadores idempotentes** — `doc_id` = primeros 16 caracteres hex del SHA-256 de los bytes del PDF; `table_id` = `{doc_id}-t{NN}`, con NN el orden de la tabla lógica en el documento (01, 02, …). *Motivo:* re-ingerir el mismo contenido produce los mismos IDs aunque cambie el nombre del archivo.
 - **BR-006 Reemplazo por documento** — Al indexar un documento, primero se eliminan de Pinecone y del almacén todas las tablas con ese `doc_id`, y luego se escriben las nuevas. *Motivo:* evita tablas obsoletas si la nueva ingesta detecta menos tablas.
@@ -148,9 +148,11 @@ Prioridad MoSCoW: **M** = Must, **S** = Should, **C** = Could.
 
 ### 7.1 Variables de entorno (`.env.example`)
 
-`LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LLM_MODEL`, `EMBEDDING_MODEL`, `EMBEDDING_DIM`, `PINECONE_API_KEY`, `PINECONE_INDEX_NAME` (= `mas-2026s2-tables`), `LANGSMITH_TRACING` (= `true`), `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` (= `mas-2026s2-<legajo>`), `SANDBOX_BACKEND` (`auto`|`docker`|`subprocess`), `SANDBOX_TIMEOUT_S`, `INGEST_MAX_RETRIES`, `ANALYST_MAX_RETRIES`, `RETRIEVAL_K` (por defecto 6), `LLM_CACHE` (`true`|`false`), `DATA_DIR` (por defecto `data/store`).
+`LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LLM_MODEL`, `EMBEDDING_MODEL`, `EMBEDDING_DIM`, `PINECONE_API_KEY`, `PINECONE_INDEX_NAME` (= `mas-2026s2-tables`), `LANGSMITH_TRACING` (= `true`), `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` (= `mas-2026s2-<legajo>`), `SANDBOX_BACKEND` (`auto`|`docker`|`subprocess`), `SANDBOX_TIMEOUT_S`, `INGEST_MAX_RETRIES`, `ANALYST_MAX_RETRIES`, `RETRIEVAL_K` (por defecto 6), `LLM_CACHE` (`true`|`false`), `DATA_DIR` (por defecto `data/store`), `LLM_STRUCTURED_METHOD` (`function_calling`|`json_schema`|`json_mode`, por defecto `function_calling`).
 
 ### 7.2 `TableMetadata` (Pydantic)
+
+Cubre los campos mínimos de la consigna (§5.2: `table_id`, `name`, `description`, `columns` con descripción y tipo/unidad, `row_headers`, `source` con archivo y páginas) y agrega los que necesitan las reglas de respondibilidad (`periods_covered`, `entities_covered`, `value_type`, `scale`).
 
 Los campos marcados **(LLM)** los genera el modelo; los marcados **(sistema)** los completa el código y no se le piden al LLM.
 
@@ -159,7 +161,7 @@ Los campos marcados **(LLM)** los genera el modelo; los marcados **(sistema)** l
 | `table_id` | str | sistema | BR-005 |
 | `doc_id` | str | sistema | BR-005 |
 | `name` | str | LLM | Nombre descriptivo de la tabla |
-| `description` | str | LLM | Qué mide, sobre qué población/entidad, período y fuente si se menciona |
+| `description` | str | LLM | 2 a 4 oraciones: qué mide la tabla, sus unidades, período y alcance (BR-003) |
 | `columns` | list[`ColumnInfo`] | LLM + sistema | Una por columna (BR-001) |
 | `row_header_column` | str \| null | LLM | Columna que contiene los encabezados de fila |
 | `row_headers` | list[str] | sistema | Valores de `row_header_column` (BR-002) |
@@ -233,6 +235,7 @@ Analista:  understand → retrieve ─(índice vacío)→ decide_status
 - VC-012: Validar un `TableMetadata` con una columna de menos → error que nombra BR-001. *(FR-011, BR-001)*
 - VC-013: Validar un `TableMetadata` con `row_header_column = "Región"` cuando el DataFrame no tiene esa columna → error que nombra BR-002; con una columna existente → `row_headers` igual a sus valores no nulos. *(BR-002)*
 - VC-014: Validar `name = "Tabla 3"` → error que nombra BR-003. *(BR-003)*
+- VC-014b: Validar `description` con 1 oración y con 5 oraciones → error que nombra BR-003 en ambos casos; con 2 oraciones que incluyen "12.5 %" → sin error. *(BR-003, borde)*
 - VC-015: Validar una columna numérica con `unit = ""` → error; con `unit = "desconocida"` → sin error. *(BR-004)*
 - VC-016: LLM simulado que devuelve metadatos inválidos la primera vez y válidos la segunda → la tabla se indexa y la traza muestra 2 llamadas a `enrich`; las tablas que eran válidas desde el inicio se enriquecen 1 sola vez. *(FR-012)*
 - VC-017: LLM simulado que siempre devuelve metadatos inválidos → `enrich` se llama `INGEST_MAX_RETRIES + 1` veces, la tabla no se indexa y la UI muestra el aviso con sus errores. *(FR-013, NFR-004)*
@@ -314,7 +317,7 @@ Analista:  understand → retrieve ─(índice vacío)→ decide_status
 
 ## 11. Preguntas abiertas
 
-- **OQ-1** — La copia de la consigna tiene vacía la tabla de campos mínimos de metadatos (§5.2). ¿Coincide la lista de la cátedra con §7.2? *Responsable:* alumno, consultando a la cátedra. *Impacto:* puede agregar campos a `TableMetadata`.
+Ninguna. (OQ-1, campos mínimos de metadatos, se resolvió con la consigna completa: §7.2 los cubre y BR-003 incorpora la extensión de la descripción.)
 
 ## 12. Supuestos
 
@@ -325,3 +328,8 @@ Analista:  understand → retrieve ─(índice vacío)→ decide_status
 - A-6: El catálogo de la pestaña Explorar se lee del almacén local (JSON), que es la fuente de verdad junto con Pinecone; ambos se escriben en la misma operación (BR-006).
 - A-7: Una tabla que agota los reintentos de validación se saltea (FR-013) en lugar de indexarse con metadatos degradados.
 - A-8: El historial del chat vive en `st.session_state` y se pierde al recargar la página.
+
+## Changelog
+
+- **0.2 (2026-10-01)** — Consigna completa recibida: se resuelve OQ-1; BR-003 exige descripción de 2 a 4 oraciones (VC-014b); §7.2 y FR-015 referencian los mínimos de la consigna §5.2. Se agrega `LLM_STRUCTURED_METHOD` a §7.1 (D-003). Segundo PDF definido: INDEC ICA.
+- **0.1 (2026-10-01)** — Borrador inicial aprobado por el alumno.
