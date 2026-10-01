@@ -1,7 +1,7 @@
 # Iteración 02 — PDF sintético, fixtures de prueba y preguntas del PDF sintético
 
-**Estado**: código completo y verificado en el contenedor; **pendiente el criterio [usuario]** (el alumno abre el PDF y corre los tests en Windows).
-**Commit**: lo hace el alumno con el mensaje `PDF sintético reproducible, fixtures de borde y preguntas de evaluación del PDF sintético`. SHA: _pendiente_.
+**Estado**: COMPLETA (todos los criterios PASS, incluidos los [usuario]).
+**Commit**: lo hace el alumno con el mensaje `PDF sintético reproducible, fixtures de borde y preguntas de evaluación del PDF sintético`. SHA: `ab372b86d68ce908b7a12b2f86345ebad01f6455`.
 
 ## Resultados de criterios
 | Criterio | Comando | Resultado |
@@ -14,7 +14,7 @@
 | Propiedades de cada PDF de borde | `tests/test_edge_pdfs.py` | PASS |
 | Suite completa | `uv run pytest -q` | PASS (46 passed) |
 | Lint / tipos | `uv run ruff check .`, `uv run mypy agents services` | PASS |
-| [usuario] PDF legible y razonable para la demo | el alumno lo abre | _pendiente_ |
+| [usuario] PDF legible y razonable para la demo; 46 passed en Windows | el alumno | PASS |
 
 ## Archivos
 Agregados: `scripts/sample_data.py`, `scripts/make_sample_pdf.py`, `scripts/make_test_fixtures.py`, `data/sample_pdfs/informe_sintetico.pdf`, `tests/fixtures/sample_truth.json`, `tests/test_sample_pdf.py`, `tests/test_edge_pdfs.py`, `tests/test_questions.py`, `eval/questions.yaml`, `docs/SPEC-plan-artifacts/iterations/02-pdfs-y-fixtures.md`.

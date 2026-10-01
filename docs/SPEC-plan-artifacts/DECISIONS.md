@@ -51,3 +51,28 @@ Las decisiones de diseño principales del sistema están en el spec §10 (tomada
 **Context**: El PDF debe cubrir los casos de la consigna §5.1, §5.2 y §6.4.
 **Decision** (aprobada por el alumno): "Anuario Estadístico 2023 — Provincia de San Aurelio (ficticia)", 6 cuadros: finanzas 2019-2023 (paréntesis), desempleo por departamento (`%`, `s/d`, sin promedio provincial), salarios (`$`, solo líneas horizontales, sin aclarar nominal/real), producción con encabezado de 2 niveles, población, exportaciones mensuales multipágina (miles de US$). 11 preguntas `syn-01`…`syn-11` aprobadas por el alumno.
 **Consequences**: el Analista debe resolver `syn-06` (promedio ponderado definido en la pregunta) como `answered` y `syn-04` como `partial`.
+
+## D-010: Detección: PyMuPDF `lines` + respaldo propio por líneas horizontales  (Iteration 3)
+**Context**: `find_tables(strategy="lines")` detecta grillas y los cuadros de INDEC, pero no tablas con solo 2-3 líneas horizontales (Cuadro 3 sintético). La estrategia `text` de PyMuPDF toma páginas enteras como tabla en INDEC y separa "$" del número.
+**Decision**: `lines` primero; después, con las líneas horizontales que no están dentro de una tabla ya detectada, se agrupan las de igual ancho y se lee la región con palabras: filas por altura, columnas por "ríos" de blanco en los datos (no por el encabezado, que suele estar alineado a la izquierda y los números a la derecha). Se acepta solo si alguna columna tiene ≥ 80 % de celdas numéricas y ≥ 3 valores.
+**Rejected**: estrategia `text` (ruido en INDEC); pdfplumber como segunda librería (más dependencias para un solo caso).
+**Consequences**: el respaldo descarta en silencio sus candidatos fallidos (no generan avisos); las infografías de INDEC con líneas decorativas no pasan el filtro numérico.
+
+## D-011: Encabezados: detección propia y aplanado con `" | "`  (Iteration 3)
+**Context**: `table.header` de PyMuPDF toma el epígrafe como encabezado; los cuadros reales tienen hasta 4 filas de encabezado con años, marcas (`*`, `e`) y filas de unidades.
+**Decision**: encabezado = filas iniciales sin valores numéricos de datos (los años sueltos no cuentan), hasta 4. Celdas `None` (combinadas) heredan de la izquierda si comparten el grupo del primer nivel o si la fila tiene una sola etiqueta fuera de la 1ª columna (unidades). Se quitan prefijos de marca antes de dígitos. Duplicados → " (2)"; vacíos → "columna_N".
+**Consequences**: los nombres de INDEC son largos pero autoexplicativos (`Agosto | 2026e | Millones de USD`); la unidad queda en el nombre de la columna.
+
+## D-012: Umbrales de filtrado  (Iteration 3)
+**Decision**: FR-008b descarta < 2 filas de datos, < 2 columnas o < 50 % de celdas con texto (cuadros reales de INDEC: ≥ 57 %; gráficos: ≤ 36 %). FR-008: imagen ≥ 10 % del área; tabla con < 10 % de celdas con texto → "tabla sin texto legible". FR-006: columna numérica si ≥ 80 % de las celdas no faltantes convierten.
+**Consequences**: una tabla real muy rala (< 50 % de celdas) se descartaría con aviso; está documentado.
+
+## D-013: Convenciones numéricas por documento  (Iteration 3)
+**Context**: INDEC define "-" como cero absoluto; otros documentos lo usan como "sin dato".
+**Decision** (elegida por el alumno): `LoadedPdf.zero_dash` se activa si el texto declara "- Cero absoluto" (o "igual a cero"); entonces "-" → 0, si no → NaN, y la convención va a las notas de la tabla. El formato decimal se decide por columna (el que convierte más celdas) y, si empata (p. ej. "612.450"), por el formato mayoritario del documento (`LoadedPdf.decimal_comma`).
+**Consequences**: el LLM y el código generado reciben la convención en `notes`.
+
+## D-014: Reglas extra para no unir tablas consecutivas  (Iteration 3)
+**Context**: El Cuadro 10 de INDEC empieza en la página siguiente al 9 con la misma estructura; la regla literal de la consigna los uniría.
+**Decision** (spec v0.3, FR-007): no es continuación si hay un epígrafe ("Cuadro/Tabla/Gráfico N") encima de la tabla en la página N+1, o si la tabla de la página N tiene debajo un bloque "Fuente"/"Nota". Solo se consideran la última tabla de la página N y la primera de la N+1.
+**Rejected**: excluir el 8 % superior de la página como encabezado (el epígrafe del Cuadro 10 está a 55 pt del borde).

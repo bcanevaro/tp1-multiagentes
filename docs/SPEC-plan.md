@@ -123,10 +123,10 @@ the spec — artifacts carry state, the plan carries authority.
 - Artefactos: `CONTEXT.md` (Public interfaces de los módulos de extracción), `DECISIONS.md` (umbrales y heurísticas de contexto elegidas), `iterations/03-extraccion.md`.
 
 **Success criteria**:
-- VC-001, VC-002, VC-002c (`load_pdf` lanza el error tipado; el mensaje de UI se verifica en Iteración 7), VC-003, VC-004, VC-005, VC-006, VC-006b, VC-007, VC-008, VC-009 (a nivel de avisos de extracción), VC-009b, VC-010: cada uno como test en `tests/ingestion/` que pasa con `uv run pytest tests/ingestion -q`.
+- VC-001, VC-002, VC-002c (`load_pdf` lanza el error tipado; el mensaje de UI se verifica en Iteración 7), VC-003, VC-004, VC-005, VC-005b, VC-006, VC-006b, VC-007, VC-008, VC-008b, VC-009 (a nivel de avisos de extracción), VC-009b, VC-009c, VC-009d, VC-010: cada uno como test en `tests/ingestion/` que pasa con `uv run pytest tests/ingestion -q`.
 - Test: el PDF solo-texto produce 0 tablas (base de VC-002b).
 - `ruff` y `mypy` en 0 errores.
-- **[usuario]** El alumno corre `uv run python -m agents.ingestion.extract data/sample_pdfs/indec_ica.pdf` (modo diagnóstico que imprime tablas detectadas, forma y páginas) sobre el PDF de INDEC que descargó; el resultado se registra. Si alguna tabla del PDF real no se detecta o se detecta mal, se consulta al alumno antes de cambiar heurísticas.
+- **[usuario]** (el PDF de INDEC ya está en el repo; VC-008b y VC-009c se verifican con tests automáticos) El alumno corre `uv run python -m agents.ingestion.extract data/sample_pdfs/indec_ica.pdf` (modo diagnóstico que imprime tablas detectadas, forma y páginas) sobre el PDF de INDEC que descargó; el resultado se registra. Si alguna tabla del PDF real no se detecta o se detecta mal, se consulta al alumno antes de cambiar heurísticas.
 - Artefactos al día.
 
 **Hands off**: firmas de `load_pdf`, `extract_tables`, `normalize_dataframe`, `merge_continuations`, `collect_context`; estructura de `RawTable`, `TableContext` y de los avisos; resultado de la extracción sobre el PDF de INDEC.
@@ -305,12 +305,13 @@ the spec — artifacts carry state, the plan carries authority.
 |---|---|---|---|
 | FR-001 | VC-001 | 3 | pytest tests/ingestion |
 | FR-002 | VC-002 | 3, 7 | pytest (loader y AppTest) |
-| FR-003 | VC-003 | 3 | pytest |
+| FR-003 | VC-003, VC-009d | 3 | pytest |
 | FR-004 | VC-004 | 3 | pytest |
-| FR-005 | VC-005 | 3 | pytest |
+| FR-005 | VC-005, VC-005b | 3 | pytest |
 | FR-006 | VC-006, VC-006b | 3 | pytest |
-| FR-007 | VC-007, VC-008 | 3 | pytest |
+| FR-007 | VC-007, VC-008, VC-008b | 3 | pytest |
 | FR-008 | VC-009, VC-009b | 3, 7 | pytest + UI |
+| FR-008b | VC-009c | 3 | pytest |
 | FR-009 | VC-010 | 3 | pytest |
 | FR-010 | VC-011 | 4 | pytest (LLM simulado) |
 | FR-011 | VC-012 | 4 | pytest |
