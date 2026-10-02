@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     # Sandbox
     SANDBOX_BACKEND: SandboxBackend = "auto"
     SANDBOX_TIMEOUT_S: int = Field(default=30, ge=1, le=600)
+    SANDBOX_IMAGE: str = "mas-tp-sandbox"
 
     # Agentes
     INGEST_MAX_RETRIES: int = Field(default=2, ge=0, le=10)

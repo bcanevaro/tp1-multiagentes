@@ -1,7 +1,7 @@
 # Iteración 04 — Agente de Ingesta completo
 
-**Estado**: criterios [usuario] de la primera ingesta real en PASS; se agregó BR-004b a raíz de esa corrida y falta que el alumno re-ingiera para confirmarla.
-**Commit**: lo hace el alumno con el mensaje `Agente de Ingesta: enriquecimiento con LLM, ciclo de validación, almacén Parquet y Pinecone idempotente`. SHA: _pendiente_.
+**Estado**: COMPLETA (todos los criterios PASS, incluidos los [usuario]).
+**Commit**: lo hace el alumno con el mensaje `Agente de Ingesta: enriquecimiento con LLM, ciclo de validación, almacén Parquet y Pinecone idempotente`. SHA: `1e62f66d82e2a64293adb068a4eb7eeb830a39bf`.
 
 ## Resultados de criterios
 | Criterio | Test | Resultado |
@@ -31,7 +31,7 @@
 | [usuario] traza `ingest:informe_sintetico.pdf` con un span por nodo (VC-066) | LangSmith | PASS (captura: nodos, condicionales y 6 `ChatOpenAI gpt-4.1-mini` dentro de `enrich`) |
 | [usuario] ingesta de `indec_ica.pdf` | CLI | PASS: 11 tablas, 1 reintento, 33,2 s, 11 vectores |
 | VC-015b (BR-004b, agregado tras la ingesta real) | `test_validate.py::test_vc015b_*` | PASS (137 passed) |
-| [usuario] re-ingesta tras BR-004b: el cuadro de salarios ya no dice "corrientes" | CLI | _pendiente_ |
+| [usuario] re-ingesta tras BR-004b: el cuadro de salarios ya no dice "corrientes" | CLI | PASS (descripción sin "corrientes"); 137 passed en Windows |
 
 ## Archivos
 Agregados: `agents/ingestion/{schemas,validate,prompts,graph,cli}.py`, `services/{table_store,vector_index}.py`, `tests/ingestion/{fakes,test_validate,test_graph}.py`, este registro.

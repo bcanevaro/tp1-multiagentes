@@ -99,3 +99,15 @@ Las decisiones de diseño principales del sistema están en el spec §10 (tomada
 **Decision** (elegida por el alumno): instrucción explícita en el prompt + validación determinística: `value_type` nominal/real o las palabras corriente/constante/nominal/real en la descripción exigen la misma familia de palabras en epígrafe, sección, párrafos, notas o nombres de columna; si no, error BR-004b y reintento.
 **Rejected**: solo prompt (sin garantía); dejarlo como limitación.
 **Consequences**: puede generar algún reintento extra; una descripción honesta usa "no indica si los montos están ajustados por inflación".
+
+## D-020: Preludio de confianza + `program.py` ejecutado con `runpy`  (Iteration 5)
+**Context**: El código generado necesita cargar las tablas sin conocer rutas, y los errores deben señalar líneas del programa generado para la autocorrección.
+**Decision**: el directorio de trabajo tiene `main.py` (preludio: importa pandas, define `load_table(table_id)` sobre copias `<table_id>.parquet` con rutas relativas, bloquea la red) y `program.py` (código generado), que se ejecuta con `runpy.run_path`. Mismo layout en ambos backends (en Docker se monta en `/data`).
+**Consequences**: el prompt del Analista debe decir "usá `load_table('<table_id>')`" e imprimir el JSON al final.
+
+## D-021: Defensa en capas para el subproceso (Windows no aísla red ni archivos)  (Iteration 5)
+**Decision**: (1) filtro AST: lista blanca de imports (BR-020), sin `eval/exec/open/getattr/__import__…`, sin atributos dunder, sin métodos `read_*`/`to_csv`…, sin URLs; (2) subproceso `python -I -X utf8` con entorno construido desde cero (sin claves, NFR-002), directorio temporal con solo las tablas elegidas, `RLIMIT_CPU` en POSIX y timeout; (3) el preludio anula `socket.connect/connect_ex/sendto`, `create_connection` y `getaddrinfo` (reemplazar la clase rompía `ssl`).
+**Consequences**: aislamiento parcial documentado como limitación; Docker es el backend recomendado.
+
+## D-022: Configuración del contenedor  (Iteration 5)
+**Decision**: imagen `mas-tp-sandbox` (python:3.11-slim + pandas/numpy/pyarrow con las mismas versiones que `uv.lock`), `--network none`, raíz de solo lectura, `/data` montado `ro`, `tmpfs /tmp` 64 MB, 512 MB de memoria, 1 CPU, 64 procesos, usuario 10001, contenedor eliminado al terminar. `docker_status(image)` se evalúa una vez por proceso (si se instala Docker con la app abierta, hay que reiniciarla).

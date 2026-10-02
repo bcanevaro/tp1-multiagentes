@@ -1,6 +1,6 @@
 # CONTEXT — estado actual del proyecto
 
-_Última actualización: Iteración 4 (Agente de Ingesta completo)._
+_Última actualización: Iteración 5 (sandbox de ejecución)._
 
 ## Current state
 - Proyecto Python 3.11 gestionado con `uv` (`pyproject.toml` + `uv.lock`), sin empaquetar (`[tool.uv] package = false`): los módulos se importan desde la raíz del repo.
@@ -8,6 +8,7 @@ _Última actualización: Iteración 4 (Agente de Ingesta completo)._
 - Fábricas de chat y embeddings contra el proxy LiteLLM con caché SQLite local opcional (`services/llm.py`) y verificación de la dimensión de embeddings.
 - Helper de configuración de trazas LangSmith (`services/tracing.py`), todavía sin usar por ningún grafo.
 - `scripts/check_services.py` verifica en la PC del alumno los servicios externos. `app.py` es un placeholder que solo muestra el estado de la configuración. No hay agentes todavía.
+- **Sandbox** (`services/sandbox/`): `run_code(code, {table_id: parquet})` con filtro AST + backend Docker (`--network none`, solo lectura, 512 MB, 1 CPU, 64 procesos, usuario 10001) o subproceso (`python -I`, entorno vacío, directorio temporal con solo las tablas elegidas, red bloqueada en el preludio, timeout). `validate_execution` aplica FR-028 y devuelve `CodeResult`. Imagen: `sandbox/Dockerfile`.
 - **Agente de Ingesta completo** (`agents/ingestion/graph.py`): StateGraph `load_pdf → extract_tables → merge_continuations → collect_context → enrich ⇄ validate → persist_and_index`, con anotación por LLM (salida estructurada, una llamada por tabla en paralelo), validación BR-001…004 con reintento solo de las tablas inválidas, almacén Parquet+JSON, copia del PDF y Pinecone idempotente. CLI: `uv run python -m agents.ingestion.cli <pdf>`. Probado con servicios simulados; la ingesta real la corre el alumno.
 - Extracción determinística completa (sin LLM): carga del PDF, detección de tablas (PyMuPDF `lines` + respaldo propio por líneas horizontales), filtro de detecciones que no son tablas, aplanado de encabezados, normalización numérica, unión multipágina y contexto. Sobre el PDF sintético reproduce exactamente `sample_truth.json`; sobre INDEC obtiene los Cuadros 1-10 y la tabla de diagnósticos de la p. 35. CLI de diagnóstico: `uv run python -m agents.ingestion.extract <pdf>`.
 - PDF sintético reproducible `data/sample_pdfs/informe_sintetico.pdf` (3 páginas, 6 cuadros) con su verdad en `tests/fixtures/sample_truth.json`; 9 PDFs de casos borde que se generan en los tests; 11 preguntas de evaluación en `eval/questions.yaml` con valores verificados por test.
@@ -35,7 +36,12 @@ _Última actualización: Iteración 4 (Agente de Ingesta completo)._
 | `agents/ingestion/cli.py` | CLI de ingesta con progreso, resumen (FR-017), avisos y conteo de vectores en Pinecone |
 | `services/table_store.py` | `TableStore(data_dir)`: `save`, `save_pdf`, `delete_doc`, `load_df`, `load_metadata`, `list_tables(doc_id=None)`, rutas |
 | `services/vector_index.py` | `VectorIndex` (Protocol), `PineconeIndex`, `InMemoryIndex`, `get_vector_index`, `embedding_text`, `pinecone_metadata`, `IndexDimensionError`, `VectorRecord`, `Match` |
-| `agents/analyst/`, `sandbox/` | Vacíos |
+| `services/sandbox/__init__.py` | `run_code`, `resolve_backend`, `SandboxUnavailable`; reexporta `CodeResult`, `ExecutionResult`, `validate_execution`, `parse_code_result`, `check_code`, `ALLOWED_MODULES` |
+| `services/sandbox/ast_guard.py` | `check_code(code) -> list[str]`, `ensure_safe`, `CodeRejected`, `ALLOWED_MODULES`, `FORBIDDEN_NAMES` |
+| `services/sandbox/result.py` | `ExecutionResult`, `CodeResult` (`results[ResultItem{subquestion_id, value: float \| list[LabeledValue{label,value}], unit, label}]`, `missing[MissingItem{subquestion_id, reason}]`, `conversions[str]`), `parse_code_result`, `validate_execution` |
+| `services/sandbox/backends.py` | `PRELUDE`, `prepare_workdir`, `run_subprocess`, `run_docker`, `docker_status(image)` (cacheado por proceso) |
+| `sandbox/Dockerfile` | python:3.11-slim + pandas 3.0.6, numpy 2.4.6, pyarrow 25.0.1; usuario 10001 |
+| `agents/analyst/` | Vacío |
 | `data/sample_pdfs/indec_ica.pdf` | PDF real de INDEC (ICA, cifras de agosto de 2026, 36 páginas) |
 | `data/sample_pdfs/informe_sintetico.pdf` | PDF sintético versionado (entregable de la consigna). Se regenera con `scripts/make_sample_pdf.py`. El alumno agregará `indec_ica.pdf` |
 | `scripts/sample_data.py` | Única fuente de los números del PDF sintético; `fmt_ar`, `fmt_ar_parens`, `export_total` |
@@ -50,6 +56,7 @@ _Última actualización: Iteración 4 (Agente de Ingesta completo)._
 | `tests/ingestion/test_{loader,extract,normalize,context}.py` | Tests de la iteración 3 (VC-001…VC-010) |
 | `tests/ingestion/fakes.py` | `FakeAnnotator(failures={idx: n})` (cuenta llamadas y errores recibidos), `good_annotation`, `bad_annotation`, `HashEmbeddings` (dim 8), `make_services(data_dir, annotator, index, index_factory, max_retries)` |
 | `tests/ingestion/test_validate.py`, `tests/ingestion/test_graph.py` | Tests de la iteración 4 |
+| `tests/sandbox/` | `conftest.py` (`table`, `sub_settings`, `docker_ready()`), `test_ast_guard.py`, `test_result.py`, `test_backends.py` (tests Docker con `@pytest.mark.docker`, se saltean si no hay daemon o imagen) |
 
 ## Public interfaces
 - `services.config.Settings` (pydantic-settings, `case_sensitive=True`). Campos: los de spec §7.1 más `LLM_STRUCTURED_METHOD: Literal["function_calling","json_schema","json_mode"]` (default `function_calling`) y `CACHE_DIR: Path` (default `.cache`). Métodos/propiedades: `missing_required(feature: Literal["ingest","ask","explore"] | None = None) -> list[str]`, `resolve_path(Path) -> Path`, `data_dir`, `cache_dir` (rutas absolutas resueltas contra `PROJECT_ROOT`).
@@ -68,6 +75,8 @@ _Última actualización: Iteración 4 (Agente de Ingesta completo)._
 - `IngestionServices(annotate, embeddings_factory, index_factory, store, max_retries, index_name)`; `Annotator = Callable[[list[(TableDraft, errores_previos)], pdf_name, config], list[TableAnnotation | Exception]]`.
 - Pinecone: id = `table_id`; metadatos según spec §7.3, `pages` como lista de strings (Pinecone no admite listas de números); índice serverless coseno en `PINECONE_CLOUD`/`PINECONE_REGION` (aws/us-east-1).
 - `services.table_store.TableStore`: `tables/{table_id}.parquet|.json`, `pdfs/{doc_id}.pdf` bajo `DATA_DIR`. Los textos se leen del Parquet como dtype `str` de pandas 3.
+- `services.sandbox.run_code(code, tables: dict[table_id, Path], *, settings=None, backend=None, timeout=None, guard=True) -> ExecutionResult(stdout, stderr, exit_code, duration_s, backend, timed_out, rejected)`. Dentro del programa existen `pd` y `load_table(table_id) -> DataFrame` (y `TABLES`); el programa debe imprimir como **última línea** un JSON `CodeResult`. Los errores muestran líneas de `program.py` (= código generado). `validate_execution(execution) -> (CodeResult | None, motivo | None)`.
+- `SANDBOX_IMAGE` (default `mas-tp-sandbox`) en `Settings`/`.env.example`; `SANDBOX_BACKEND=auto` elige Docker si `docker_status` da OK.
 - `services.tracing.run_config(kind: Literal["ingest","analyst"], label: str, **metadata) -> RunnableConfig` — `run_name` = `ingest:<label>` o `analyst:<label[:60]>`, `tags=[kind]`, metadata sin valores `None`.
 
 ## Conventions & invariants
@@ -80,6 +89,8 @@ _Última actualización: Iteración 4 (Agente de Ingesta completo)._
 
 ## Commands
 ```
+docker build -t mas-tp-sandbox sandbox/      # imagen del sandbox (PC del alumno)
+uv run pytest tests/sandbox -m docker -q     # tests del backend Docker
 uv sync
 uv run pytest -q
 uv run ruff check .
@@ -89,7 +100,7 @@ uv run streamlit run app.py
 ```
 
 ## Known gaps
-- Analista (Iteración 6), sandbox (5), UI (7), evaluación (8). La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
+- Analista (Iteración 6), UI (7), evaluación (8). Los tests de Docker solo corren en la PC del alumno. La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
 - PDF de INDEC: lo agrega el alumno (necesario en iteración 3). Preguntas sobre ese PDF: iteración 8.
 - Limitaciones conocidas de la extracción (documentar en README): en el Cuadro 3 de INDEC (p. 13) PyMuPDF mezcla dos columnas en una celda ("-3,1 8.883") y deja encabezados cortados ("A preci Cantidad corrient"); la tabla de diagnósticos de la p. 35 no tiene epígrafe; los títulos de sección de INDEC con el mismo tamaño que el cuerpo no se detectan (el Cuadro 8 hereda "3.3 …"); el respaldo `hrules` asume que cada columna tiene datos alineados (falla si una columna está vacía en todas las filas). La página 1 de INDEC genera un aviso `image_region` por las imágenes de tapa (falso positivo inofensivo).
 - No usamos `table.header` de PyMuPDF (toma el epígrafe como encabezado externo): el encabezado se detecta con `split_header` sobre `table.extract()`.
