@@ -67,7 +67,9 @@ def test_syn01_average_yoy_growth() -> None:
 def test_syn02_rd_share_by_year() -> None:
     expected = _expected("syn-02")["values"]
     for year, rd, total in zip(
-        sd.YEARS_FINANCE, sd.FINANCE["Gasto en ciencia y tecnología"], sd.FINANCE["Gastos totales"],
+        sd.YEARS_FINANCE,
+        sd.FINANCE["Gasto en ciencia y tecnología"],
+        sd.FINANCE["Gastos totales"],
         strict=True,
     ):
         assert _close(expected[str(year)], rd / total * 100)

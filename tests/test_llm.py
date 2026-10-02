@@ -74,3 +74,8 @@ def test_chat_model_points_to_proxy(make_settings: Callable[..., Settings]) -> N
     llm = get_chat_model(make_settings(LLM_CACHE=False))
     assert llm.openai_api_base == "http://proxy.test/v1"  # type: ignore[attr-defined]
     assert llm.model_name == "chat-model"  # type: ignore[attr-defined]
+
+
+def test_chat_model_override_for_code(make_settings: Callable[..., Settings]) -> None:
+    llm = get_chat_model(make_settings(LLM_CACHE=False), model="code-model")
+    assert llm.model_name == "code-model"  # type: ignore[attr-defined]

@@ -53,6 +53,8 @@ class Settings(BaseSettings):
     EMBEDDING_DIM: int | None = None
     # Método de salida estructurada que soporta el modelo del proxy (spec A-3).
     LLM_STRUCTURED_METHOD: StructuredMethod = "function_calling"
+    # Modelo opcional solo para generar código en el Analista (vacío = LLM_MODEL).
+    LLM_CODE_MODEL: str | None = None
 
     # Pinecone
     PINECONE_API_KEY: str | None = None

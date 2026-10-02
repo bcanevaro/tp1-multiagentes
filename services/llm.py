@@ -168,15 +168,20 @@ def _require(settings: Settings, *names: str) -> None:
         raise ConfigurationError(f"Faltan variables de entorno: {', '.join(missing)}")
 
 
-def get_chat_model(settings: Settings | None = None, temperature: float = 0.0) -> BaseChatModel:
-    """Modelo de chat del proxy LiteLLM (API compatible con OpenAI)."""
+def get_chat_model(
+    settings: Settings | None = None, temperature: float = 0.0, model: str | None = None
+) -> BaseChatModel:
+    """Modelo de chat del proxy LiteLLM (API compatible con OpenAI).
+
+    `model` permite usar otro modelo del proxy para un paso puntual (p. ej. `LLM_CODE_MODEL`).
+    """
     settings = settings or get_settings()
     _require(settings, "LITELLM_BASE_URL", "LITELLM_API_KEY", "LLM_MODEL")
     enable_llm_cache(settings)
     return ChatOpenAI(
         base_url=settings.LITELLM_BASE_URL,
         api_key=settings.LITELLM_API_KEY,
-        model=settings.LLM_MODEL,
+        model=model or settings.LLM_MODEL,
         temperature=temperature,
         timeout=120,
         max_retries=2,

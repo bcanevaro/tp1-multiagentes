@@ -47,3 +47,14 @@ def test_vc055_forbidden_code_is_rejected(code: str, fragment: str) -> None:
     assert any(fragment in r for r in reasons), reasons
     with pytest.raises(CodeRejected):
         ensure_safe(code)
+
+
+def test_common_pandas_and_list_methods_are_allowed() -> None:
+    """Corrida real (syn-05): `df.rename(...)` se rechazaba por parecerse a os.rename."""
+    code = (
+        "df = load_table('t')\n"
+        "df = df.rename(columns={'a': 'b'})\n"
+        "items = [1, 2]\n"
+        "items.remove(1)\n"
+    )
+    assert check_code(code) == []

@@ -26,9 +26,11 @@ FORBIDDEN_NAMES = frozenset(
         "__builtins__", "__loader__", "__spec__",
     }
 )  # fmt: skip
+# `rename` y `remove` NO están: son métodos habituales de DataFrame y list, y las versiones de
+# archivos (os.rename, os.remove, Path.rename) no son alcanzables sin importar os/pathlib.
 _IO_ATTR_RE = re.compile(
     r"^(read_\w+|to_(csv|parquet|excel|pickle|json|sql|hdf|feather|stata|html|xml|latex|"
-    r"clipboard|orc|gbq)|system|popen|spawn\w*|fork|remove|unlink|rmdir|rename)$"
+    r"clipboard|orc|gbq)|system|popen|spawn\w*|fork|unlink|rmdir)$"
 )
 
 
