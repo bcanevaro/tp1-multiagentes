@@ -156,3 +156,21 @@ Las decisiones de diseño principales del sistema están en el spec §10 (tomada
 
 ## D-034: Errores de servicio: clasificación por paquete y escalado en la ingesta  (Iteration 7)
 **Decision**: `ui.errors.classify` recorre la cadena `__cause__`/`__context__` y decide el servicio por el paquete de la clase (`openai` → LiteLLM, `pinecone` → Pinecone, `docker`, `langsmith`) o por tipo propio (`SandboxUnavailable`, `IndexDimensionError`, `ConfigurationError`/`EmbeddingDimensionError`). En la ingesta, si TODAS las llamadas al LLM de una ronda fallan con errores de conexión o autenticación (`openai`/`httpx`), el nodo `enrich` relanza el primero en vez de tratarlo como metadatos inválidos; antes, una clave inválida terminaba en "Ninguna tabla pasó la validación" tras 3 intentos por tabla, sin mencionar LiteLLM.
+
+## D-035: Cómo se buscan los valores esperados al corregir (BR-030)  (Iteration 8)
+**Decision**: `eval/scoring.py` arma un "pozo" con todos los números que devolvió el código (cada resultado escalar con su `label`, y cada valor por categoría con su etiqueta). Un esperado `value` es correcto si algún número del pozo coincide (tolerancia relativa 0,5 %, absoluta 0,01 si el esperado es 0); un esperado `values` exige, por categoría, un número cuya etiqueta contenga la categoría como palabra (sin tildes ni mayúsculas) y que coincida. No se aceptan cambios de escala (fracción ↔ %, miles ↔ unidades): el valor tiene que estar en la unidad esperada.
+**Consequences**: es tolerante con la forma del JSON (lista por categoría o un resultado por categoría) pero no con la unidad; un error de escala cuenta como incorrecto.
+
+## D-036: Preguntas sobre el PDF de INDEC  (Iteration 8)
+**Decision**: 5 preguntas (`ind-01`…`ind-05`): 3 `answered` (participación de Santa Fe en el acumulado, Cuadro 10; saldo promedio mensual, Cuadro 1; peso del sector automotriz en las exportaciones de agosto, Cuadros 7 y 1, multitabla), 1 `cannot_answer` (septiembre de 2026: la fila existe pero sin dato) y 1 `partial` (Patagonia agosto 2026 sí, crecimiento vs. 2025 no, Cuadro 9). `tests/ingestion/test_indec_questions.py` recalcula cada valor desde las tablas extraídas del PDF; el alumno los verifica contra el PDF.
+
+## D-037: Links a las trazas y resultados crudos  (Iteration 8)
+**Decision**: `answer_question(..., run_id=uuid)` fija el id de la traza raíz; `services.tracing.trace_url(run_id, proyecto)` arma el link sin esperar a que la traza termine de subirse (si falla, la celda queda en "—"). `flush_traces()` espera a que se suban antes de terminar el script. Además del reporte, `eval/last_run.json` guarda los datos crudos de la corrida (se versiona como evidencia).
+
+## D-038: Experimento en LangSmith  (Iteration 8)
+**Decision**: dataset `mas-tp-tablas-preguntas`, sincronizado por `question_id` (crea, actualiza o borra ejemplos; correrlo dos veces no duplica). Evaluadores `estado`, `valores` (sin puntaje para `cannot_answer`) y `correcta`, y el resumen `exactitud`; reutilizan `eval.scoring`, así el experimento y `EVALUATION.md` corrigen igual. Prefijo del experimento `analista-<modelo>`, metadatos con modelo, modelo de código y backend del sandbox; concurrencia 2 por defecto.
+
+## D-039: Períodos compuestos en FR-024 (spec v0.7)  (Iteration 8)
+**Context**: Primera corrida de la evaluación: 14/16. Las dos fallas (ind-01, ind-02) fueron falsos `cannot_answer` del chequeo determinístico: el plan anotó períodos como "2026 hasta agosto" o "enero 2026" y FR-024 los buscaba como frase; en el Cuadro 1 de INDEC el mes es una fila ("Enero") y el año está en las columnas ("Saldo | 2026 | …") y en el epígrafe.
+**Decision**: un período con años o meses está presente si cada año (subcadena) y cada mes (palabra) aparece en algún elemento de las tablas, no necesariamente juntos. Si no nombra ni año ni mes, se busca como antes.
+**Consequences**: más permisivo con combinaciones mes-año que no existan juntas (p. ej. una fila "Septiembre" sin dato para 2026, como ind-04); esos casos quedan a cargo del LLM de selección y del código, que reportan el dato faltante (ind-04 dio `cannot_answer` correctamente).

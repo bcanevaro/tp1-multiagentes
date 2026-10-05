@@ -1,0 +1,945 @@
+{
+  "header": {
+    "Fecha": "2026-10-05 21:00",
+    "Modelo": "`gpt-4.1-mini`",
+    "Embeddings": "`text-embedding-3-small`",
+    "Sandbox": "subprocess",
+    "Preguntas": "16",
+    "Duración total": "68 s"
+  },
+  "runs": [
+    {
+      "id": "syn-01",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 1"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 6.59,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/cb45e848-6b95-4dfa-b26c-0ef17435da57?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuál fue el promedio simple de las variaciones interanuales de los ingresos totales del sector público entre 2019 y 2023?",
+        "status": "answered",
+        "error": null,
+        "answer": "El promedio simple de las variaciones interanuales de los ingresos totales del sector público entre 2019 y 2023 fue 84,88 %. Este dato se obtuvo de la tabla «Ingresos y gastos del sector público provincial, 2019-2023» en la página 1 del informe_sintetico.pdf, calculando las variaciones interanuales y luego su promedio simple.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": 84.87923391013013,
+              "unit": "%",
+              "label": "Promedio variación interanual ingresos totales sector público"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "02a227cb112d2d4c-t01",
+            "name": "Ingresos y gastos del sector público provincial, 2019-2023",
+            "pages": [
+              1
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          }
+        ],
+        "code": "import pandas as pd\nimport json\n\n# Cargar la tabla\ntabla = load_table(\"02a227cb112d2d4c-t01\")\n\nmissing = []\nconversions = []\n\n# Filtrar la fila de ingresos totales\ningresos = tabla[tabla[\"Concepto\"] == \"Ingresos totales\"]\n\n# Verificar que existan datos para los años 2019 a 2023\nanios = [\"2019\", \"2020\", \"2021\", \"2022\", \"2023\"]\nif ingresos.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila de Ingresos totales.\"})\nelse:\n    for anio in anios:\n        if pd.isna(ingresos[anio].values[0]):\n            missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Falta dato de ingresos totales para el año {anio}.\"})\n\n# Si hay datos faltantes no calculamos\nif missing:\n    promedio_variacion = None\nelse:\n    # Calcular variaciones interanuales: (valor año actual - valor año anterior) / valor año anterior * 100\n    valores = ingresos[anios].values.flatten()\n    variaciones = []\n    for i in range(1, len(valores)):\n        if valores[i-1] == 0:\n            # Evitar división por cero\n            missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Ingreso total es cero en el año {anios[i-1]}, no se puede calcular variación.\"})\n            variaciones = []\n            break\n        variacion = (valores[i] - valores[i-1]) / valores[i-1] * 100\n        variaciones.append(variacion)\n    if variaciones:\n        promedio_variacion = sum(variaciones) / len(variaciones)\n    else:\n        promedio_variacion = None\n\nresults = []\nif promedio_variacion is not None:\n    results.append({\"subquestion_id\": \"q1\", \"value\": float(promedio_variacion), \"unit\": \"%\", \"label\": \"Promedio variación interanual ingresos totales sector público\"})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import pandas as pd\nimport json\n\n# Cargar la tabla\ntabla = load_table(\"02a227cb112d2d4c-t01\")\n\nmissing = []\nconversions = []\n\n# Filtrar la fila de ingresos totales\ningresos = tabla[tabla[\"Concepto\"] == \"Ingresos totales\"]\n\n# Verificar que existan datos para los años 2019 a 2023\nanios = [\"2019\", \"2020\", \"2021\", \"2022\", \"2023\"]\nif ingresos.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila de Ingresos totales.\"})\nelse:\n    for anio in anios:\n        if pd.isna(ingresos[anio].values[0]):\n            missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Falta dato de ingresos totales para el año {anio}.\"})\n\n# Si hay datos faltantes no calculamos\nif missing:\n    promedio_variacion = None\nelse:\n    # Calcular variaciones interanuales: (valor año actual - valor año anterior) / valor año anterior * 100\n    valores = ingresos[anios].values.flatten()\n    variaciones = []\n    for i in range(1, len(valores)):\n        if valores[i-1] == 0:\n            # Evitar división por cero\n            missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Ingreso total es cero en el año {anios[i-1]}, no se puede calcular variación.\"})\n            variaciones = []\n            break\n        variacion = (valores[i] - valores[i-1]) / valores[i-1] * 100\n        variaciones.append(variacion)\n    if variaciones:\n        promedio_variacion = sum(variaciones) / len(variaciones)\n    else:\n        promedio_variacion = None\n\nresults = []\nif promedio_variacion is not None:\n    results.append({\"subquestion_id\": \"q1\", \"value\": float(promedio_variacion), \"unit\": \"%\", \"label\": \"Promedio variación interanual ingresos totales sector público\"})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": 84.87923391013013, \"unit\": \"%\", \"label\": \"Promedio variación interanual ingresos totales sector público\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.236,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-02",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 1"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.48,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/f4587987-18ea-4aba-a179-b33bdf11d78d?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Qué proporción de los gastos totales representó el gasto en ciencia y tecnología en cada año?",
+        "status": "answered",
+        "error": null,
+        "answer": "La proporción del gasto en ciencia y tecnología respecto a los gastos totales fue: 2019: 1,13 %; 2020: 1,07 %; 2021: 1,17 %; 2022: 1,23 %; 2023: 1,15 %. Estos datos se obtuvieron de la tabla «Ingresos y gastos del sector público provincial, 2019-2023» en la página 1 del informe_sintetico.pdf, calculando la relación entre ambos conceptos para cada año.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": [
+                {
+                  "label": "2019",
+                  "value": 1.131072135829645
+                },
+                {
+                  "label": "2020",
+                  "value": 1.0707066492518351
+                },
+                {
+                  "label": "2021",
+                  "value": 1.1708647007012443
+                },
+                {
+                  "label": "2022",
+                  "value": 1.2329571344579933
+                },
+                {
+                  "label": "2023",
+                  "value": 1.1530631073464113
+                }
+              ],
+              "unit": "%",
+              "label": "Proporción del gasto en ciencia y tecnología respecto a los gastos totales por año"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "02a227cb112d2d4c-t01",
+            "name": "Ingresos y gastos del sector público provincial, 2019-2023",
+            "pages": [
+              1
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar la tabla\ntabla = load_table(\"02a227cb112d2d4c-t01\")\n\nmissing = []\nresults = []\nconversions = []\n\n# Verificar que existan las filas necesarias\nconceptos_necesarios = [\"Gasto en ciencia y tecnología\", \"Gastos totales\"]\nfor concepto in conceptos_necesarios:\n    if concepto not in tabla[\"Concepto\"].values:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Falta el concepto '{concepto}' en la tabla\"})\n\nif not missing:\n    # Filtrar filas\n    gasto_ciencia = tabla[tabla[\"Concepto\"] == \"Gasto en ciencia y tecnología\"].iloc[0]\n    gasto_total = tabla[tabla[\"Concepto\"] == \"Gastos totales\"].iloc[0]\n\n    # Calcular proporción por año\n    proporciones = []\n    for year in [\"2019\", \"2020\", \"2021\", \"2022\", \"2023\"]:\n        gasto_ciencia_val = gasto_ciencia[year]\n        gasto_total_val = gasto_total[year]\n        if pd.isna(gasto_ciencia_val) or pd.isna(gasto_total_val) or gasto_total_val == 0:\n            missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Dato faltante o cero para el año {year}\"})\n            continue\n        proporcion = (gasto_ciencia_val / gasto_total_val) * 100\n        proporciones.append({\"label\": year, \"value\": float(proporcion)})\n\n    if proporciones:\n        results.append({\"subquestion_id\": \"q1\", \"value\": proporciones, \"unit\": \"%\", \"label\": \"Proporción del gasto en ciencia y tecnología respecto a los gastos totales por año\"})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar la tabla\ntabla = load_table(\"02a227cb112d2d4c-t01\")\n\nmissing = []\nresults = []\nconversions = []\n\n# Verificar que existan las filas necesarias\nconceptos_necesarios = [\"Gasto en ciencia y tecnología\", \"Gastos totales\"]\nfor concepto in conceptos_necesarios:\n    if concepto not in tabla[\"Concepto\"].values:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Falta el concepto '{concepto}' en la tabla\"})\n\nif not missing:\n    # Filtrar filas\n    gasto_ciencia = tabla[tabla[\"Concepto\"] == \"Gasto en ciencia y tecnología\"].iloc[0]\n    gasto_total = tabla[tabla[\"Concepto\"] == \"Gastos totales\"].iloc[0]\n\n    # Calcular proporción por año\n    proporciones = []\n    for year in [\"2019\", \"2020\", \"2021\", \"2022\", \"2023\"]:\n        gasto_ciencia_val = gasto_ciencia[year]\n        gasto_total_val = gasto_total[year]\n        if pd.isna(gasto_ciencia_val) or pd.isna(gasto_total_val) or gasto_total_val == 0:\n            missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Dato faltante o cero para el año {year}\"})\n            continue\n        proporcion = (gasto_ciencia_val / gasto_total_val) * 100\n        proporciones.append({\"label\": year, \"value\": float(proporcion)})\n\n    if proporciones:\n        results.append({\"subquestion_id\": \"q1\", \"value\": proporciones, \"unit\": \"%\", \"label\": \"Proporción del gasto en ciencia y tecnología respecto a los gastos totales por año\"})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": [{\"label\": \"2019\", \"value\": 1.131072135829645}, {\"label\": \"2020\", \"value\": 1.0707066492518351}, {\"label\": \"2021\", \"value\": 1.1708647007012443}, {\"label\": \"2022\", \"value\": 1.2329571344579933}, {\"label\": \"2023\", \"value\": 1.1530631073464113}], \"unit\": \"%\", \"label\": \"Proporción del gasto en ciencia y tecnología respecto a los gastos totales por año\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.613,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-03",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "cannot_answer",
+      "status": "cannot_answer",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [],
+      "tables_ok": null,
+      "retries": 0,
+      "seconds": 1.6,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/0ac451fd-5c89-4f43-9a57-07bfffb8acda?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuál fue el resultado financiero del sector público provincial en 2024?",
+        "status": "cannot_answer",
+        "error": null,
+        "answer": "No puedo responder esta pregunta con las tablas indexadas.\n\n- ¿Cuál fue el resultado financiero del sector público provincial en 2024?: Datos para el año 2024 (La tabla Ingresos y gastos del sector público provincial cubre 2019-2023)",
+        "code_result": null,
+        "missing": [
+          {
+            "subquestion_id": "q1",
+            "text": "¿Cuál fue el resultado financiero del sector público provincial en 2024?",
+            "reason": "Datos para el año 2024",
+            "related_table": "La tabla Ingresos y gastos del sector público provincial cubre 2019-2023"
+          }
+        ],
+        "tables": [],
+        "code": "",
+        "executions": [],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-04",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "partial",
+      "status": "partial",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 2"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.75,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/50298fd4-00bd-4e28-8fcd-1797ff0d8ce0?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Qué departamento tuvo la tasa de desempleo más alta en 2023, y por cuánto superó al promedio provincial?",
+        "status": "partial",
+        "error": null,
+        "answer": "El departamento con la tasa de desempleo más alta en 2023 fue Norte, con un 9,8 %, según la tabla «Tasa de desempleo por departamento, 2021-2023» (informe_sintetico.pdf, página 1). No se pudo responder cuánto superó esta tasa al promedio provincial, ya que no se dispone del dato del promedio provincial en esa tabla.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": [
+                {
+                  "label": "Norte",
+                  "value": 9.8
+                }
+              ],
+              "unit": "%",
+              "label": "Departamento con la tasa de desempleo más alta en 2023"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [
+          {
+            "subquestion_id": "q2",
+            "text": "Cuánto superó la tasa de desempleo del departamento con la tasa más alta al promedio provincial en 2023",
+            "reason": "Promedio provincial de tasa de desempleo en 2023",
+            "related_table": "La tabla Tasa de desempleo por departamento, 2021-2023 cubre tasas por departamento, no incluye promedio provincial."
+          }
+        ],
+        "tables": [
+          {
+            "table_id": "02a227cb112d2d4c-t02",
+            "name": "Tasa de desempleo por departamento, 2021-2023",
+            "pages": [
+              1
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar tabla\ndf = load_table(\"02a227cb112d2d4c-t02\")\n\nmissing = []\nconversions = []\nresults = []\n\n# Verificar que la columna 2023 exista y no tenga todos los datos faltantes\nif '2023' not in df.columns:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Columna 2023 no encontrada en la tabla\"})\nelse:\n    # Filtrar filas con dato en 2023\n    df_2023 = df[['Departamento', '2023']].dropna(subset=['2023'])\n    if df_2023.empty:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No hay datos de tasa de desempleo para 2023\"})\n    else:\n        # Encontrar el departamento con la tasa más alta en 2023\n        max_row = df_2023.loc[df_2023['2023'].idxmax()]\n        departamento_max = max_row['Departamento']\n        tasa_max = float(max_row['2023'])\n        results.append({\n            \"subquestion_id\": \"q1\",\n            \"value\": [\n                {\"label\": departamento_max, \"value\": tasa_max}\n            ],\n            \"unit\": \"%\",\n            \"label\": \"Departamento con la tasa de desempleo más alta en 2023\"\n        })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar tabla\ndf = load_table(\"02a227cb112d2d4c-t02\")\n\nmissing = []\nconversions = []\nresults = []\n\n# Verificar que la columna 2023 exista y no tenga todos los datos faltantes\nif '2023' not in df.columns:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Columna 2023 no encontrada en la tabla\"})\nelse:\n    # Filtrar filas con dato en 2023\n    df_2023 = df[['Departamento', '2023']].dropna(subset=['2023'])\n    if df_2023.empty:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No hay datos de tasa de desempleo para 2023\"})\n    else:\n        # Encontrar el departamento con la tasa más alta en 2023\n        max_row = df_2023.loc[df_2023['2023'].idxmax()]\n        departamento_max = max_row['Departamento']\n        tasa_max = float(max_row['2023'])\n        results.append({\n            \"subquestion_id\": \"q1\",\n            \"value\": [\n                {\"label\": departamento_max, \"value\": tasa_max}\n            ],\n            \"unit\": \"%\",\n            \"label\": \"Departamento con la tasa de desempleo más alta en 2023\"\n        })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": [{\"label\": \"Norte\", \"value\": 9.8}], \"unit\": \"%\", \"label\": \"Departamento con la tasa de desempleo más alta en 2023\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.902,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-05",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 4",
+        "Cuadro 5"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.1,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/b89c1cbe-6b6a-4193-9bcb-a2f6dcba8efe?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuál fue la producción de soja por habitante en cada departamento en 2023?",
+        "status": "answered",
+        "error": null,
+        "answer": "La producción de soja por habitante en 2023 fue: Capital 0,0165 t/hab; Norte 3,81 t/hab; Valle Alto 2,03 t/hab; Llanura 7,57 t/hab; Costa Sur 1,2 t/hab. Estos datos se obtuvieron usando las tablas «Producción de soja y maíz por departamento, campañas 2022 y 2023» y «Población y superficie por departamento, 2023» (informe_sintetico.pdf, página 2), calculando la producción total de soja dividida por la población de cada departamento, con la conversión de miles de toneladas a toneladas.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": [
+                {
+                  "label": "Capital",
+                  "value": 0.01649114213405176
+                },
+                {
+                  "label": "Norte",
+                  "value": 3.8133478024959304
+                },
+                {
+                  "label": "Valle Alto",
+                  "value": 2.0282150889388673
+                },
+                {
+                  "label": "Llanura",
+                  "value": 7.565386755703951
+                },
+                {
+                  "label": "Costa Sur",
+                  "value": 1.1977813662851928
+                }
+              ],
+              "unit": "toneladas por habitante",
+              "label": "Producción de soja por habitante en cada departamento en 2023"
+            }
+          ],
+          "missing": [],
+          "conversions": [
+            "miles de toneladas → toneladas"
+          ]
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "02a227cb112d2d4c-t04",
+            "name": "Producción de soja y maíz por departamento, campañas 2022 y 2023",
+            "pages": [
+              2
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          },
+          {
+            "table_id": "02a227cb112d2d4c-t05",
+            "name": "Población y superficie por departamento, 2023",
+            "pages": [
+              2
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar tablas\nproduccion = load_table(\"02a227cb112d2d4c-t04\")\npoblacion = load_table(\"02a227cb112d2d4c-t05\")\n\nmissing = []\nconversions = [\"miles de toneladas → toneladas\"]\n\n# Verificar que las tablas tengan los departamentos esperados\nexpected_departments = set(['Capital', 'Norte', 'Valle Alto', 'Llanura', 'Costa Sur'])\nprod_departments = set(produccion['Departamento'])\npob_departments = set(poblacion['Departamento'])\n\nif not expected_departments.issubset(prod_departments):\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan departamentos en tabla de producción\"})\nif not expected_departments.issubset(pob_departments):\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan departamentos en tabla de población\"})\n\n# Filtrar producción de soja 2023 y población 2023\nprod_soja_2023 = produccion[['Departamento', 'Soja | 2023']].copy()\npob_2023 = poblacion[['Departamento', 'Población (habitantes)']].copy()\n\n# Unir tablas por departamento\ndf = pd.merge(prod_soja_2023, pob_2023, on='Departamento', how='inner')\n\n# Calcular producción de soja por habitante (toneladas por habitante)\n# Producción está en miles de toneladas, multiplicar por 1000 para toneladas\n# División: (Soja | 2023 * 1000) / Población\n# Resultado en toneladas por habitante\n\ndf['Producción soja por habitante'] = (df['Soja | 2023'] * 1000) / df['Población (habitantes)']\n\n# Preparar resultado\nresults = []\nvalues = []\nfor _, row in df.iterrows():\n    # valor en toneladas por habitante\n    val = float(row['Producción soja por habitante'])\n    values.append({\"label\": row['Departamento'], \"value\": val})\n\nresults.append({\n    \"subquestion_id\": \"q1\",\n    \"value\": values,\n    \"unit\": \"toneladas por habitante\",\n    \"label\": \"Producción de soja por habitante en cada departamento en 2023\"\n})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar tablas\nproduccion = load_table(\"02a227cb112d2d4c-t04\")\npoblacion = load_table(\"02a227cb112d2d4c-t05\")\n\nmissing = []\nconversions = [\"miles de toneladas → toneladas\"]\n\n# Verificar que las tablas tengan los departamentos esperados\nexpected_departments = set(['Capital', 'Norte', 'Valle Alto', 'Llanura', 'Costa Sur'])\nprod_departments = set(produccion['Departamento'])\npob_departments = set(poblacion['Departamento'])\n\nif not expected_departments.issubset(prod_departments):\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan departamentos en tabla de producción\"})\nif not expected_departments.issubset(pob_departments):\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan departamentos en tabla de población\"})\n\n# Filtrar producción de soja 2023 y población 2023\nprod_soja_2023 = produccion[['Departamento', 'Soja | 2023']].copy()\npob_2023 = poblacion[['Departamento', 'Población (habitantes)']].copy()\n\n# Unir tablas por departamento\ndf = pd.merge(prod_soja_2023, pob_2023, on='Departamento', how='inner')\n\n# Calcular producción de soja por habitante (toneladas por habitante)\n# Producción está en miles de toneladas, multiplicar por 1000 para toneladas\n# División: (Soja | 2023 * 1000) / Población\n# Resultado en toneladas por habitante\n\ndf['Producción soja por habitante'] = (df['Soja | 2023'] * 1000) / df['Población (habitantes)']\n\n# Preparar resultado\nresults = []\nvalues = []\nfor _, row in df.iterrows():\n    # valor en toneladas por habitante\n    val = float(row['Producción soja por habitante'])\n    values.append({\"label\": row['Departamento'], \"value\": val})\n\nresults.append({\n    \"subquestion_id\": \"q1\",\n    \"value\": values,\n    \"unit\": \"toneladas por habitante\",\n    \"label\": \"Producción de soja por habitante en cada departamento en 2023\"\n})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": [{\"label\": \"Capital\", \"value\": 0.01649114213405176}, {\"label\": \"Norte\", \"value\": 3.8133478024959304}, {\"label\": \"Valle Alto\", \"value\": 2.0282150889388673}, {\"label\": \"Llanura\", \"value\": 7.565386755703951}, {\"label\": \"Costa Sur\", \"value\": 1.1977813662851928}], \"unit\": \"toneladas por habitante\", \"label\": \"Producción de soja por habitante en cada departamento en 2023\"}], \"missing\": [], \"conversions\": [\"miles de toneladas → toneladas\"]}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.256,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-06",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 2",
+        "Cuadro 5"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.09,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/000a7743-253c-4e4d-a67c-b526850b9736?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuál fue la tasa de desempleo de la provincia en 2023 calculada como el promedio de los departamentos ponderado por su población?",
+        "status": "answered",
+        "error": null,
+        "answer": "La tasa de desempleo de la provincia en 2023, calculada como el promedio ponderado por población de los departamentos, fue 7,49 %. Este resultado se obtuvo usando las tablas «Tasa de desempleo por departamento, 2021-2023» (página 1) y «Población y superficie por departamento, 2023» (página 2) del informe_sintetico.pdf, verificando que no faltaran datos y ponderando por población.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": 7.492586600813847,
+              "unit": "%",
+              "label": "Tasa de desempleo promedio ponderada 2023"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "02a227cb112d2d4c-t02",
+            "name": "Tasa de desempleo por departamento, 2021-2023",
+            "pages": [
+              1
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          },
+          {
+            "table_id": "02a227cb112d2d4c-t05",
+            "name": "Población y superficie por departamento, 2023",
+            "pages": [
+              2
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar tablas\nunemployment_df = load_table(\"02a227cb112d2d4c-t02\")\npopulation_df = load_table(\"02a227cb112d2d4c-t05\")\n\nmissing = []\nconversions = []\n\n# Filtrar datos para 2023\nunemployment_2023 = unemployment_df[[\"Departamento\", \"2023\"]].copy()\npopulation_2023 = population_df[[\"Departamento\", \"Población (habitantes)\"]].copy()\n\n# Verificar que los departamentos coinciden en ambas tablas\ndepartments_unemployment = set(unemployment_2023[\"Departamento\"])\ndepartments_population = set(population_2023[\"Departamento\"])\n\nmissing_departments = departments_unemployment.symmetric_difference(departments_population)\nif missing_departments:\n    for d in missing_departments:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Departamento '{d}' presente en una tabla pero no en la otra\"})\n\n# Unir tablas por departamento\nmerged_df = pd.merge(unemployment_2023, population_2023, on=\"Departamento\", how=\"inner\")\n\n# Verificar datos faltantes en tasa de desempleo o población\nif merged_df[\"2023\"].isnull().any():\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan datos de tasa de desempleo para 2023 en algunos departamentos\"})\nif merged_df[\"Población (habitantes)\"].isnull().any():\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan datos de población para 2023 en algunos departamentos\"})\n\n# Calcular promedio ponderado de tasa de desempleo por población\n# Solo si no hay datos faltantes\nif not missing:\n    weighted_sum = (merged_df[\"2023\"] * merged_df[\"Población (habitantes)\"]).sum()\n    total_population = merged_df[\"Población (habitantes)\"].sum()\n    tasa_desempleo_provincia = weighted_sum / total_population\n    tasa_desempleo_provincia = float(tasa_desempleo_provincia)\nelse:\n    tasa_desempleo_provincia = float('nan')\n\nresults = []\nif not pd.isna(tasa_desempleo_provincia):\n    results.append({\n        \"subquestion_id\": \"q1\",\n        \"value\": tasa_desempleo_provincia,\n        \"unit\": \"%\",\n        \"label\": \"Tasa de desempleo promedio ponderada 2023\"\n    })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar tablas\nunemployment_df = load_table(\"02a227cb112d2d4c-t02\")\npopulation_df = load_table(\"02a227cb112d2d4c-t05\")\n\nmissing = []\nconversions = []\n\n# Filtrar datos para 2023\nunemployment_2023 = unemployment_df[[\"Departamento\", \"2023\"]].copy()\npopulation_2023 = population_df[[\"Departamento\", \"Población (habitantes)\"]].copy()\n\n# Verificar que los departamentos coinciden en ambas tablas\ndepartments_unemployment = set(unemployment_2023[\"Departamento\"])\ndepartments_population = set(population_2023[\"Departamento\"])\n\nmissing_departments = departments_unemployment.symmetric_difference(departments_population)\nif missing_departments:\n    for d in missing_departments:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": f\"Departamento '{d}' presente en una tabla pero no en la otra\"})\n\n# Unir tablas por departamento\nmerged_df = pd.merge(unemployment_2023, population_2023, on=\"Departamento\", how=\"inner\")\n\n# Verificar datos faltantes en tasa de desempleo o población\nif merged_df[\"2023\"].isnull().any():\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan datos de tasa de desempleo para 2023 en algunos departamentos\"})\nif merged_df[\"Población (habitantes)\"].isnull().any():\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Faltan datos de población para 2023 en algunos departamentos\"})\n\n# Calcular promedio ponderado de tasa de desempleo por población\n# Solo si no hay datos faltantes\nif not missing:\n    weighted_sum = (merged_df[\"2023\"] * merged_df[\"Población (habitantes)\"]).sum()\n    total_population = merged_df[\"Población (habitantes)\"].sum()\n    tasa_desempleo_provincia = weighted_sum / total_population\n    tasa_desempleo_provincia = float(tasa_desempleo_provincia)\nelse:\n    tasa_desempleo_provincia = float('nan')\n\nresults = []\nif not pd.isna(tasa_desempleo_provincia):\n    results.append({\n        \"subquestion_id\": \"q1\",\n        \"value\": tasa_desempleo_provincia,\n        \"unit\": \"%\",\n        \"label\": \"Tasa de desempleo promedio ponderada 2023\"\n    })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": 7.492586600813847, \"unit\": \"%\", \"label\": \"Tasa de desempleo promedio ponderada 2023\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.273,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-07",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "cannot_answer",
+      "status": "cannot_answer",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [],
+      "tables_ok": null,
+      "retries": 0,
+      "seconds": 2.16,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/9e63d592-56f2-4c2d-83fe-bf9fcab47f7e?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Qué porcentaje de los ingresos totales del sector público de 2023 representaron las exportaciones de ese año expresadas en pesos?",
+        "status": "cannot_answer",
+        "error": null,
+        "answer": "No puedo responder esta pregunta con las tablas indexadas.\n\n- Porcentaje que representaron las exportaciones de 2023 sobre los ingresos totales del sector público de 2023 expresados en pesos: Valor de exportaciones en pesos para 2023 (las exportaciones están en miles de dólares, no en pesos) (La tabla Exportaciones mensuales por grandes rubros, 2022-2023 cubre exportaciones en miles de dólares para 2022 y 2023, pero no en pesos.)",
+        "code_result": null,
+        "missing": [
+          {
+            "subquestion_id": "q1",
+            "text": "Porcentaje que representaron las exportaciones de 2023 sobre los ingresos totales del sector público de 2023 expresados en pesos",
+            "reason": "Valor de exportaciones en pesos para 2023 (las exportaciones están en miles de dólares, no en pesos)",
+            "related_table": "La tabla Exportaciones mensuales por grandes rubros, 2022-2023 cubre exportaciones en miles de dólares para 2022 y 2023, pero no en pesos."
+          }
+        ],
+        "tables": [],
+        "code": "",
+        "executions": [],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-08",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 6"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.49,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/38df2eb7-a594-4dbe-bbc5-f5a23afd4239?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuál fue el total de exportaciones de la provincia en 2023, en millones de dólares?",
+        "status": "answered",
+        "error": null,
+        "answer": "El total de exportaciones de la provincia en 2023 fue de 956,69 millones de dólares. Este dato se obtuvo de la tabla «Exportaciones mensuales por grandes rubros, 2022-2023» (páginas 2 y 3 del informe_sintetico.pdf), sumando las exportaciones mensuales de 2023 y convirtiendo de miles a millones de dólares.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": 956.6873,
+              "unit": "millones de dólares",
+              "label": "Total exportaciones provincia 2023"
+            }
+          ],
+          "missing": [],
+          "conversions": [
+            "miles de dólares estadounidenses → millones de dólares"
+          ]
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "02a227cb112d2d4c-t06",
+            "name": "Exportaciones mensuales por grandes rubros, 2022-2023",
+            "pages": [
+              2,
+              3
+            ],
+            "pdf_name": "informe_sintetico.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar la tabla de exportaciones mensuales por grandes rubros\nexportaciones = load_table(\"02a227cb112d2d4c-t06\")\n\nmissing = []\nconversions = [\"miles de dólares estadounidenses → millones de dólares\"]\n\n# Filtrar datos para el año 2023\nexport_2023 = exportaciones[exportaciones[\"Año\"] == 2023]\n\nif export_2023.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No hay datos para el año 2023 en la tabla de exportaciones.\"})\n    total_export_2023_millones = float(0)\nelse:\n    # Sumar la columna Total para todo 2023 (está en miles de dólares)\n    total_export_2023_miles = export_2023[\"Total\"].sum()\n    # Convertir a millones de dólares\n    total_export_2023_millones = float(total_export_2023_miles / 1000)\n\nresults = [{\n    \"subquestion_id\": \"q1\",\n    \"value\": total_export_2023_millones,\n    \"unit\": \"millones de dólares\",\n    \"label\": \"Total exportaciones provincia 2023\"\n}]\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar la tabla de exportaciones mensuales por grandes rubros\nexportaciones = load_table(\"02a227cb112d2d4c-t06\")\n\nmissing = []\nconversions = [\"miles de dólares estadounidenses → millones de dólares\"]\n\n# Filtrar datos para el año 2023\nexport_2023 = exportaciones[exportaciones[\"Año\"] == 2023]\n\nif export_2023.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No hay datos para el año 2023 en la tabla de exportaciones.\"})\n    total_export_2023_millones = float(0)\nelse:\n    # Sumar la columna Total para todo 2023 (está en miles de dólares)\n    total_export_2023_miles = export_2023[\"Total\"].sum()\n    # Convertir a millones de dólares\n    total_export_2023_millones = float(total_export_2023_miles / 1000)\n\nresults = [{\n    \"subquestion_id\": \"q1\",\n    \"value\": total_export_2023_millones,\n    \"unit\": \"millones de dólares\",\n    \"label\": \"Total exportaciones provincia 2023\"\n}]\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": 956.6873, \"unit\": \"millones de dólares\", \"label\": \"Total exportaciones provincia 2023\"}], \"missing\": [], \"conversions\": [\"miles de dólares estadounidenses → millones de dólares\"]}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.398,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-09",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "cannot_answer",
+      "status": "cannot_answer",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [],
+      "tables_ok": null,
+      "retries": 0,
+      "seconds": 1.66,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/9e9e2538-9768-462f-9797-023e3a76a8e4?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuánto creció el salario real promedio del sector industria entre 2021 y 2023?",
+        "status": "cannot_answer",
+        "error": null,
+        "answer": "No puedo responder esta pregunta con las tablas indexadas.\n\n- Cuánto creció el salario real promedio del sector industria entre 2021 y 2023: No se dispone de datos de salario real, solo salario bruto promedio en pesos sin ajuste por inflación. (La tabla Salario bruto promedio mensual por sector, 2021-2023 cubre salario bruto promedio mensual en pesos para los años 2021, 2022 y 2023 por sector.)",
+        "code_result": null,
+        "missing": [
+          {
+            "subquestion_id": "q1",
+            "text": "Cuánto creció el salario real promedio del sector industria entre 2021 y 2023",
+            "reason": "No se dispone de datos de salario real, solo salario bruto promedio en pesos sin ajuste por inflación.",
+            "related_table": "La tabla Salario bruto promedio mensual por sector, 2021-2023 cubre salario bruto promedio mensual en pesos para los años 2021, 2022 y 2023 por sector."
+          }
+        ],
+        "tables": [],
+        "code": "",
+        "executions": [],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-10",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "cannot_answer",
+      "status": "cannot_answer",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [],
+      "tables_ok": null,
+      "retries": 0,
+      "seconds": 1.8,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/f05a7d2d-f1c9-4e7c-971e-ec848569d77a?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuántos turistas visitaron la provincia en 2023?",
+        "status": "cannot_answer",
+        "error": null,
+        "answer": "No puedo responder esta pregunta con las tablas indexadas.\n\n- Número de turistas que visitaron la provincia en 2023: Número de turistas que visitaron la provincia en 2023",
+        "code_result": null,
+        "missing": [
+          {
+            "subquestion_id": "q1",
+            "text": "Número de turistas que visitaron la provincia en 2023",
+            "reason": "Número de turistas que visitaron la provincia en 2023",
+            "related_table": ""
+          }
+        ],
+        "tables": [],
+        "code": "",
+        "executions": [],
+        "retries": 0
+      }
+    },
+    {
+      "id": "syn-11",
+      "doc": "informe_sintetico.pdf",
+      "expected_status": "cannot_answer",
+      "status": "cannot_answer",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [],
+      "tables_ok": null,
+      "retries": 0,
+      "seconds": 1.56,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/5bbc382f-42d1-48ff-b303-42da8297e44f?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuál fue la tasa de desempleo del departamento Río Seco en 2023?",
+        "status": "cannot_answer",
+        "error": null,
+        "answer": "No puedo responder esta pregunta con las tablas indexadas.\n\n- Cuál fue la tasa de desempleo del departamento Río Seco en 2023: El departamento Río Seco no está presente en la tabla de tasa de desempleo por departamento. (La tabla Tasa de desempleo por departamento cubre 2021-2023 para los departamentos Capital, Norte, Valle Alto, Llanura y Costa Sur.)",
+        "code_result": null,
+        "missing": [
+          {
+            "subquestion_id": "q1",
+            "text": "Cuál fue la tasa de desempleo del departamento Río Seco en 2023",
+            "reason": "El departamento Río Seco no está presente en la tabla de tasa de desempleo por departamento.",
+            "related_table": "La tabla Tasa de desempleo por departamento cubre 2021-2023 para los departamentos Capital, Norte, Valle Alto, Llanura y Costa Sur."
+          }
+        ],
+        "tables": [],
+        "code": "",
+        "executions": [],
+        "retries": 0
+      }
+    },
+    {
+      "id": "ind-01",
+      "doc": "indec_ica.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 10"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.4,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/d675694b-978f-42a0-9b63-3f811e4d6545?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Qué porcentaje de las exportaciones argentinas acumuladas hasta agosto de 2026 se originó en la provincia de Santa Fe?",
+        "status": "answered",
+        "error": null,
+        "answer": "El porcentaje de las exportaciones argentinas acumuladas hasta agosto de 2026 que se originó en la provincia de Santa Fe es 20,44 %. Este dato se obtuvo de la tabla «Origen de las exportaciones por regiones económicas y grandes rubros, acumulado hasta agosto de 2026» (indec_ica.pdf, página 30), calculando la proporción de las exportaciones de Santa Fe respecto al total nacional.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": 20.440756602426838,
+              "unit": "%",
+              "label": "Porcentaje de exportaciones acumuladas hasta agosto de 2026 originadas en Santa Fe"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "18d7b83789e2f178-t10",
+            "name": "Origen de las exportaciones por regiones económicas y grandes rubros, acumulado hasta agosto de 2026",
+            "pages": [
+              30
+            ],
+            "pdf_name": "indec_ica.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar la tabla con los datos de exportaciones acumuladas hasta agosto de 2026\ndf = load_table(\"18d7b83789e2f178-t10\")\n\nresults = []\nmissing = []\nconversions = []\n\n# Filtrar la fila correspondiente a la provincia de Santa Fe\nsf_row = df[df[\"Provincias\"] == \"Santa Fe\"]\n\n# Obtener el total nacional de exportaciones (fila Total, Total)\ntotal_row = df[(df[\"Regiones económicas\"] == \"Total\") & (df[\"Provincias\"] == \"Total\")]\n\nif sf_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila para la provincia de Santa Fe en la tabla.\"})\nif total_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila total nacional en la tabla.\"})\n\nif not sf_row.empty and not total_row.empty:\n    # Extraer el valor total de exportaciones para Santa Fe y para el total nacional\n    sf_total = float(sf_row[\"Total | Millones de USD\"].values[0])\n    total_export = float(total_row[\"Total | Millones de USD\"].values[0])\n\n    if total_export == 0:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"El total nacional de exportaciones es cero, no se puede calcular el porcentaje.\"})\n    else:\n        # Calcular el porcentaje de exportaciones de Santa Fe respecto al total nacional\n        porcentaje_sf = (sf_total / total_export) * 100\n        results.append({\n            \"subquestion_id\": \"q1\",\n            \"value\": float(porcentaje_sf),\n            \"unit\": \"%\",\n            \"label\": \"Porcentaje de exportaciones acumuladas hasta agosto de 2026 originadas en Santa Fe\"\n        })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar la tabla con los datos de exportaciones acumuladas hasta agosto de 2026\ndf = load_table(\"18d7b83789e2f178-t10\")\n\nresults = []\nmissing = []\nconversions = []\n\n# Filtrar la fila correspondiente a la provincia de Santa Fe\nsf_row = df[df[\"Provincias\"] == \"Santa Fe\"]\n\n# Obtener el total nacional de exportaciones (fila Total, Total)\ntotal_row = df[(df[\"Regiones económicas\"] == \"Total\") & (df[\"Provincias\"] == \"Total\")]\n\nif sf_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila para la provincia de Santa Fe en la tabla.\"})\nif total_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila total nacional en la tabla.\"})\n\nif not sf_row.empty and not total_row.empty:\n    # Extraer el valor total de exportaciones para Santa Fe y para el total nacional\n    sf_total = float(sf_row[\"Total | Millones de USD\"].values[0])\n    total_export = float(total_row[\"Total | Millones de USD\"].values[0])\n\n    if total_export == 0:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"El total nacional de exportaciones es cero, no se puede calcular el porcentaje.\"})\n    else:\n        # Calcular el porcentaje de exportaciones de Santa Fe respecto al total nacional\n        porcentaje_sf = (sf_total / total_export) * 100\n        results.append({\n            \"subquestion_id\": \"q1\",\n            \"value\": float(porcentaje_sf),\n            \"unit\": \"%\",\n            \"label\": \"Porcentaje de exportaciones acumuladas hasta agosto de 2026 originadas en Santa Fe\"\n        })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": 20.440756602426838, \"unit\": \"%\", \"label\": \"Porcentaje de exportaciones acumuladas hasta agosto de 2026 originadas en Santa Fe\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.399,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "ind-02",
+      "doc": "indec_ica.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 1"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.65,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/62d630dc-4edd-4418-af82-1d00cfe5f911?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuál fue el saldo comercial promedio mensual entre enero y agosto de 2026?",
+        "status": "answered",
+        "error": null,
+        "answer": "El saldo comercial promedio mensual entre enero y agosto de 2026 fue de 2.281,25 millones de USD, según la tabla «Intercambio comercial argentino de bienes, enero-agosto 2026 y año 2025» (indec_ica.pdf, página 7). Este valor se obtuvo calculando el promedio mensual del saldo comercial para esos meses.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": 2281.25,
+              "unit": "millones de USD",
+              "label": "Saldo comercial promedio mensual entre enero y agosto de 2026"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "18d7b83789e2f178-t01",
+            "name": "Intercambio comercial argentino de bienes, enero-agosto 2026 y año 2025",
+            "pages": [
+              7
+            ],
+            "pdf_name": "indec_ica.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar la tabla\ndf = load_table(\"18d7b83789e2f178-t01\")\n\nmissing = []\nconversions = []\n\n# Filtrar los meses de enero a agosto de 2026\nmeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto']\ndf_meses = df[df['Período'].isin(meses)]\n\nif df_meses.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontraron datos para los meses enero a agosto de 2026.\"})\n    saldo_promedio_mensual = None\nelse:\n    # Calcular el saldo comercial promedio mensual entre enero y agosto de 2026\n    # La columna de saldo para 2026 es 'Saldo | 2026 | Millones de USD'\n    saldo_promedio_mensual = float(df_meses['Saldo | 2026 | Millones de USD'].mean())\n\nresults = []\nif saldo_promedio_mensual is not None:\n    results.append({\n        \"subquestion_id\": \"q1\",\n        \"value\": saldo_promedio_mensual,\n        \"unit\": \"millones de USD\",\n        \"label\": \"Saldo comercial promedio mensual entre enero y agosto de 2026\"\n    })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar la tabla\ndf = load_table(\"18d7b83789e2f178-t01\")\n\nmissing = []\nconversions = []\n\n# Filtrar los meses de enero a agosto de 2026\nmeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto']\ndf_meses = df[df['Período'].isin(meses)]\n\nif df_meses.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontraron datos para los meses enero a agosto de 2026.\"})\n    saldo_promedio_mensual = None\nelse:\n    # Calcular el saldo comercial promedio mensual entre enero y agosto de 2026\n    # La columna de saldo para 2026 es 'Saldo | 2026 | Millones de USD'\n    saldo_promedio_mensual = float(df_meses['Saldo | 2026 | Millones de USD'].mean())\n\nresults = []\nif saldo_promedio_mensual is not None:\n    results.append({\n        \"subquestion_id\": \"q1\",\n        \"value\": saldo_promedio_mensual,\n        \"unit\": \"millones de USD\",\n        \"label\": \"Saldo comercial promedio mensual entre enero y agosto de 2026\"\n    })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": 2281.25, \"unit\": \"millones de USD\", \"label\": \"Saldo comercial promedio mensual entre enero y agosto de 2026\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.364,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "ind-03",
+      "doc": "indec_ica.pdf",
+      "expected_status": "answered",
+      "status": "answered",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 1",
+        "Cuadro 7"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.6,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/8c6c0931-9f58-49dc-8e36-35e389bf9951?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Qué porcentaje de las exportaciones totales de agosto de 2026 correspondió al sector automotriz?",
+        "status": "answered",
+        "error": null,
+        "answer": "El porcentaje de las exportaciones totales de agosto de 2026 que correspondió al sector automotriz fue 9,88 %. Este dato se obtuvo usando las tablas «Intercambio comercial argentino de bienes, enero-agosto 2026 y año 2025» (página 7) y «Balanza comercial del sector automotriz por grupos de productos, agosto y acumulado hasta agosto de 2026» (página 27), calculando la proporción de las exportaciones automotrices sobre el total de exportaciones de ese mes.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": 9.884048181920523,
+              "unit": "%",
+              "label": "Porcentaje de exportaciones sector automotriz en agosto 2026"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [],
+        "tables": [
+          {
+            "table_id": "18d7b83789e2f178-t01",
+            "name": "Intercambio comercial argentino de bienes, enero-agosto 2026 y año 2025",
+            "pages": [
+              7
+            ],
+            "pdf_name": "indec_ica.pdf"
+          },
+          {
+            "table_id": "18d7b83789e2f178-t07",
+            "name": "Balanza comercial del sector automotriz por grupos de productos, agosto y acumulado hasta agosto de 2026",
+            "pages": [
+              27
+            ],
+            "pdf_name": "indec_ica.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar tablas\ntrade_df = load_table(\"18d7b83789e2f178-t01\")\nauto_df = load_table(\"18d7b83789e2f178-t07\")\n\nresults = []\nmissing = []\nconversions = []\n\n# q1: Porcentaje de las exportaciones totales de agosto de 2026 que correspondió al sector automotriz\n# Buscar exportaciones totales agosto 2026 en trade_df\nexport_total_row = trade_df[trade_df['Período'] == 'Agosto']\nif export_total_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró fila para agosto en tabla de comercio total.\"})\n    export_total = None\nelse:\n    export_total = export_total_row['Exportaciones | 2026 | Millones de USD'].values[0]\n    if pd.isna(export_total):\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Dato de exportaciones totales agosto 2026 está ausente.\"})\n        export_total = None\n\n# Buscar exportaciones sector automotriz agosto 2026 en auto_df\n# La fila con 'Exportaciones' en 'Grupos de productos' y columna 'Agosto | 2026e | Millones de USD'\nauto_exports_row = auto_df[auto_df['Grupos de productos'] == 'Exportaciones']\nif auto_exports_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró fila de exportaciones sector automotriz en agosto 2026.\"})\n    auto_exports = None\nelse:\n    auto_exports = auto_exports_row['Agosto | 2026e | Millones de USD'].values[0]\n    if pd.isna(auto_exports):\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Dato de exportaciones sector automotriz agosto 2026 está ausente.\"})\n        auto_exports = None\n\n# Calcular porcentaje si ambos datos están disponibles\nif export_total is not None and auto_exports is not None and export_total != 0:\n    percentage = (auto_exports / export_total) * 100\n    results.append({\n        \"subquestion_id\": \"q1\",\n        \"value\": float(percentage),\n        \"unit\": \"%\",\n        \"label\": \"Porcentaje de exportaciones sector automotriz en agosto 2026\"\n    })\nelse:\n    if export_total == 0:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Exportaciones totales agosto 2026 es cero, no se puede calcular porcentaje.\"})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))\n",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar tablas\ntrade_df = load_table(\"18d7b83789e2f178-t01\")\nauto_df = load_table(\"18d7b83789e2f178-t07\")\n\nresults = []\nmissing = []\nconversions = []\n\n# q1: Porcentaje de las exportaciones totales de agosto de 2026 que correspondió al sector automotriz\n# Buscar exportaciones totales agosto 2026 en trade_df\nexport_total_row = trade_df[trade_df['Período'] == 'Agosto']\nif export_total_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró fila para agosto en tabla de comercio total.\"})\n    export_total = None\nelse:\n    export_total = export_total_row['Exportaciones | 2026 | Millones de USD'].values[0]\n    if pd.isna(export_total):\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Dato de exportaciones totales agosto 2026 está ausente.\"})\n        export_total = None\n\n# Buscar exportaciones sector automotriz agosto 2026 en auto_df\n# La fila con 'Exportaciones' en 'Grupos de productos' y columna 'Agosto | 2026e | Millones de USD'\nauto_exports_row = auto_df[auto_df['Grupos de productos'] == 'Exportaciones']\nif auto_exports_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró fila de exportaciones sector automotriz en agosto 2026.\"})\n    auto_exports = None\nelse:\n    auto_exports = auto_exports_row['Agosto | 2026e | Millones de USD'].values[0]\n    if pd.isna(auto_exports):\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Dato de exportaciones sector automotriz agosto 2026 está ausente.\"})\n        auto_exports = None\n\n# Calcular porcentaje si ambos datos están disponibles\nif export_total is not None and auto_exports is not None and export_total != 0:\n    percentage = (auto_exports / export_total) * 100\n    results.append({\n        \"subquestion_id\": \"q1\",\n        \"value\": float(percentage),\n        \"unit\": \"%\",\n        \"label\": \"Porcentaje de exportaciones sector automotriz en agosto 2026\"\n    })\nelse:\n    if export_total == 0:\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Exportaciones totales agosto 2026 es cero, no se puede calcular porcentaje.\"})\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))\n",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": 9.884048181920523, \"unit\": \"%\", \"label\": \"Porcentaje de exportaciones sector automotriz en agosto 2026\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.508,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    },
+    {
+      "id": "ind-04",
+      "doc": "indec_ica.pdf",
+      "expected_status": "cannot_answer",
+      "status": "cannot_answer",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [],
+      "tables_ok": null,
+      "retries": 0,
+      "seconds": 1.98,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/c276f9f5-d4dc-4d98-a2d6-21178e2d0f28?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuánto exportó la Argentina en septiembre de 2026?",
+        "status": "cannot_answer",
+        "error": null,
+        "answer": "No puedo responder esta pregunta con las tablas indexadas.\n\n- Cuánto exportó la Argentina en septiembre de 2026: Datos de exportaciones para septiembre de 2026 no disponibles (solo hasta agosto 2026 y total anual) (La tabla Intercambio comercial argentino de bienes, enero-agosto 2026 y año 2025 cubre hasta agosto de 2026 y total anual 2025.)",
+        "code_result": null,
+        "missing": [
+          {
+            "subquestion_id": "q1",
+            "text": "Cuánto exportó la Argentina en septiembre de 2026",
+            "reason": "Datos de exportaciones para septiembre de 2026 no disponibles (solo hasta agosto 2026 y total anual)",
+            "related_table": "La tabla Intercambio comercial argentino de bienes, enero-agosto 2026 y año 2025 cubre hasta agosto de 2026 y total anual 2025."
+          }
+        ],
+        "tables": [],
+        "code": "",
+        "executions": [],
+        "retries": 0
+      }
+    },
+    {
+      "id": "ind-05",
+      "doc": "indec_ica.pdf",
+      "expected_status": "partial",
+      "status": "partial",
+      "correct": true,
+      "status_ok": true,
+      "values_ok": true,
+      "problems": [],
+      "tables": [
+        "Cuadro 9"
+      ],
+      "tables_ok": true,
+      "retries": 0,
+      "seconds": 4.28,
+      "trace": "https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/5c5f954f-d3d8-4558-b9a9-fad4647cd665?poll=true",
+      "error": null,
+      "outcome": {
+        "question": "¿Cuánto exportó la región Patagonia en agosto de 2026 y cuánto creció respecto de agosto de 2025?",
+        "status": "partial",
+        "error": null,
+        "answer": "En agosto de 2026, la región Patagonia exportó 1.469 millones de USD, según la tabla «Origen de las exportaciones por regiones y provincias, agosto 2026» (indec_ica.pdf, página 29). No se pudo determinar el crecimiento respecto de agosto de 2025 porque no se cuenta con el valor exportado de esa fecha.",
+        "code_result": {
+          "results": [
+            {
+              "subquestion_id": "q1",
+              "value": 1469.0,
+              "unit": "millones de USD",
+              "label": "Valor exportado región Patagonia agosto 2026"
+            }
+          ],
+          "missing": [],
+          "conversions": []
+        },
+        "missing": [
+          {
+            "subquestion_id": "q2",
+            "text": "Cuánto creció la exportación de la región Patagonia en agosto de 2026 respecto de agosto de 2025",
+            "reason": "Valor exportado de la región Patagonia en agosto de 2025",
+            "related_table": "La tabla Origen de las exportaciones por regiones y provincias, agosto 2026 cubre agosto de 2026 pero no agosto de 2025."
+          }
+        ],
+        "tables": [
+          {
+            "table_id": "18d7b83789e2f178-t09",
+            "name": "Origen de las exportaciones por regiones y provincias, agosto 2026",
+            "pages": [
+              29
+            ],
+            "pdf_name": "indec_ica.pdf"
+          }
+        ],
+        "code": "import json\nimport pandas as pd\n\n# Cargar la tabla con los datos de exportación\ndf = load_table(\"18d7b83789e2f178-t09\")\n\nresults = []\nmissing = []\nconversions = []\n\n# Filtrar la fila correspondiente a la región Patagonia\n# La tabla tiene una columna 'Regiones económicas' con el nombre de la región\n# y una fila con 'Patagonia' en esa columna\npatagonia_row = df[df[\"Regiones económicas\"] == \"Patagonia\"]\n\nif patagonia_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila para la región Patagonia en la tabla de agosto de 2026\"})\nelse:\n    # Obtener el valor total exportado para Patagonia en agosto de 2026\n    # La columna es 'Total | Millones de USD'\n    total_export = patagonia_row[\"Total | Millones de USD\"].values[0]\n    if pd.isna(total_export):\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Valor total exportado para Patagonia en agosto de 2026 es NaN\"})\n    else:\n        results.append({\n            \"subquestion_id\": \"q1\",\n            \"value\": float(total_export),\n            \"unit\": \"millones de USD\",\n            \"label\": \"Valor exportado región Patagonia agosto 2026\"\n        })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+        "executions": [
+          {
+            "attempt": 1,
+            "code": "import json\nimport pandas as pd\n\n# Cargar la tabla con los datos de exportación\ndf = load_table(\"18d7b83789e2f178-t09\")\n\nresults = []\nmissing = []\nconversions = []\n\n# Filtrar la fila correspondiente a la región Patagonia\n# La tabla tiene una columna 'Regiones económicas' con el nombre de la región\n# y una fila con 'Patagonia' en esa columna\npatagonia_row = df[df[\"Regiones económicas\"] == \"Patagonia\"]\n\nif patagonia_row.empty:\n    missing.append({\"subquestion_id\": \"q1\", \"reason\": \"No se encontró la fila para la región Patagonia en la tabla de agosto de 2026\"})\nelse:\n    # Obtener el valor total exportado para Patagonia en agosto de 2026\n    # La columna es 'Total | Millones de USD'\n    total_export = patagonia_row[\"Total | Millones de USD\"].values[0]\n    if pd.isna(total_export):\n        missing.append({\"subquestion_id\": \"q1\", \"reason\": \"Valor total exportado para Patagonia en agosto de 2026 es NaN\"})\n    else:\n        results.append({\n            \"subquestion_id\": \"q1\",\n            \"value\": float(total_export),\n            \"unit\": \"millones de USD\",\n            \"label\": \"Valor exportado región Patagonia agosto 2026\"\n        })\n\nprint(json.dumps({\"results\": results, \"missing\": missing, \"conversions\": conversions}, ensure_ascii=False))",
+            "stdout": "{\"results\": [{\"subquestion_id\": \"q1\", \"value\": 1469.0, \"unit\": \"millones de USD\", \"label\": \"Valor exportado región Patagonia agosto 2026\"}], \"missing\": [], \"conversions\": []}\n",
+            "stderr": "",
+            "exit_code": 0,
+            "duration_s": 2.155,
+            "backend": "subprocess",
+            "timed_out": false,
+            "rejected": null,
+            "error": null
+          }
+        ],
+        "retries": 0
+      }
+    }
+  ]
+}

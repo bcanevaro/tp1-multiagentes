@@ -18,6 +18,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any, Literal, TypedDict, cast
+from uuid import UUID
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.messages import BaseMessage
@@ -398,14 +399,22 @@ def build_analyst_graph(services: AnalystServices) -> Any:
 # --------------------------------------------------------------------------------------
 
 
-def _config(question: str, question_id: str | None, services: AnalystServices) -> RunnableConfig:
-    return run_config(
+def _config(
+    question: str,
+    question_id: str | None,
+    services: AnalystServices,
+    run_id: UUID | None = None,
+) -> RunnableConfig:
+    config = run_config(
         "analyst",
         question,
         question_id=question_id,
         model=services.model or None,
         sandbox_backend=services.sandbox_backend or None,
     )
+    if run_id is not None:
+        config["run_id"] = run_id  # id de la traza raíz: permite armar el link (FR-062)
+    return config
 
 
 def answer_question(
@@ -413,11 +422,13 @@ def answer_question(
     question_id: str | None = None,
     services: AnalystServices | None = None,
     settings: Settings | None = None,
+    run_id: UUID | None = None,
 ) -> AnalystState:
     services = services or default_services(settings)
     graph = build_analyst_graph(services)
     initial: AnalystState = {"question": question, "question_id": question_id, "log": []}
-    result: AnalystState = graph.invoke(initial, config=_config(question, question_id, services))
+    config = _config(question, question_id, services, run_id)
+    result: AnalystState = graph.invoke(initial, config=config)
     return result
 
 

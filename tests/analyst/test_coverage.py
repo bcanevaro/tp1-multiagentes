@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from agents.analyst.coverage import apply_deterministic_checks
 from agents.analyst.schemas import Candidate
@@ -183,3 +184,51 @@ def test_reference_average_reported_by_table_or_explicit_calculation_stays_cover
         [q], [cover("q1", [UNEMPLOYMENT_ID], ["2023"])], candidates()
     )
     assert result.covered
+
+
+def indec_like() -> list[Candidate]:
+    """Como el Cuadro 1 de INDEC: meses en las filas y el año en columnas y epígrafe."""
+    df = pd.DataFrame(
+        {
+            "Período": ["Acumulado hasta agosto", "Enero", "Febrero", "Agosto", "Septiembre"],
+            "Saldo | 2026 | Millones de USD": [18249.0, 2189.0, 797.0, 2187.0, float("nan")],
+            "Saldo | 2025 | Millones de USD": [5109.0, 162.0, 275.0, 1440.0, 937.0],
+        }
+    )
+    meta = _meta(
+        "ica-t01",
+        "Intercambio comercial argentino",
+        [
+            _col("Período"),
+            _col("Saldo | 2026 | Millones de USD", "millones de USD", "nominal"),
+            _col("Saldo | 2025 | Millones de USD", "millones de USD", "nominal"),
+        ],
+        df,
+        7,
+    ).model_copy(update={"caption": "Cuadro 1. Intercambio comercial. Enero-agosto de 2026"})
+    return [Candidate(table_id="ica-t01", score=1.0, metadata=meta, preview_markdown="")]
+
+
+@pytest.mark.parametrize(
+    "periods",
+    [
+        ["2026 hasta agosto"],  # ind-01 en la primera corrida real
+        ["enero 2026", "febrero 2026", "agosto de 2026"],  # ind-02
+        ["acumulado hasta agosto de 2026"],
+    ],
+)
+def test_composite_periods_split_into_month_and_year(periods: list[str]) -> None:
+    q = sub("q1", "Saldo comercial", periods=periods)
+    [result] = apply_deterministic_checks(
+        [q], [cover("q1", ["ica-t01"], ["Período"])], indec_like()
+    )
+    assert result.covered, result.missing
+
+
+@pytest.mark.parametrize("periods", [["marzo de 2026"], ["agosto 2024"], ["2027"]])
+def test_composite_period_with_absent_month_or_year_is_uncovered(periods: list[str]) -> None:
+    q = sub("q1", "Saldo comercial", periods=periods)
+    [result] = apply_deterministic_checks(
+        [q], [cover("q1", ["ica-t01"], ["Período"])], indec_like()
+    )
+    assert not result.covered and periods[0] in result.missing

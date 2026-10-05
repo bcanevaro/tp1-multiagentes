@@ -1,7 +1,7 @@
 # Iteración 07 — Interfaz Streamlit
 
-**Estado**: PENDIENTE de los criterios [usuario].
-**Commit**: lo hace el alumno con el mensaje `UI Streamlit: subir con progreso, explorar tablas y preguntar con historial`. SHA: _pendiente_.
+**Estado**: COMPLETA (todos los criterios PASS, incluidos los [usuario]).
+**Commit**: lo hace el alumno con el mensaje `UI Streamlit: subir con progreso, explorar tablas y preguntar con historial`. SHA: `d1526aca1997ef5ca92d3a30f0e6e7f4c3ccedf8`.
 
 ## Resultados de criterios
 | Criterio | Test | Resultado |
@@ -18,9 +18,9 @@
 | Clave de LiteLLM inválida en la ingesta (D-034) | `tests/ingestion/test_graph.py::test_service_error_on_every_table_stops_ingestion` | PASS |
 | Suite completa | `uv run pytest -q` | PASS (234 passed, 5 skipped = tests Docker, en el contenedor) |
 | Lint / tipos | `uv run ruff check .`, `uv run mypy agents services ui app.py` | PASS |
-| [usuario] VC-022, VC-023, VC-060: subir el PDF sintético desde la UI | `uv run streamlit run app.py` | _pendiente_ |
-| [usuario] VC-061: Explorar con los dos PDFs ingeridos | idem | _pendiente_ |
-| [usuario] VC-062: dos preguntas en el historial con los 7 elementos | idem | _pendiente_ |
+| [usuario] VC-022, VC-023, VC-060: subir el PDF sintético desde la UI | `uv run streamlit run app.py` | PASS (el alumno usó la app y cerró la iteración con el commit) |
+| [usuario] VC-061: Explorar con los dos PDFs ingeridos | idem | PASS (el alumno usó la app y cerró la iteración con el commit) |
+| [usuario] VC-062: dos preguntas en el historial con los 7 elementos | idem | PASS (el alumno usó la app y cerró la iteración con el commit) |
 
 ## Archivos
 Agregados: `ui/{__init__,runtime,errors,sidebar,upload,explore,ask}.py`, `tests/ui/{__init__,conftest,test_app,test_errors}.py`, este registro.

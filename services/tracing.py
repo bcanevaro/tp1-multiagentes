@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+import warnings
+from types import SimpleNamespace
+from typing import Any, Literal, cast
+from uuid import UUID
 
 from langchain_core.runnables import RunnableConfig
 
@@ -29,3 +32,34 @@ def run_config(kind: AgentKind, label: str, **metadata: Any) -> RunnableConfig:
         tags=[kind],
         metadata={k: v for k, v in metadata.items() if v is not None},
     )
+
+
+def trace_url(run_id: UUID, project: str | None) -> str:
+    """Link a la traza en LangSmith, o "" si no se puede armar (sin red, sin clave…).
+
+    No consulta la corrida: arma la URL con el id que se le pasó al grafo (`config["run_id"]`)
+    y el id del proyecto, así funciona aunque la traza todavía se esté subiendo.
+    """
+    if not project:
+        return ""
+    try:
+        from langsmith import Client
+
+        client = Client()
+        project_id = client.read_project(project_name=project).id
+        run = SimpleNamespace(id=run_id, session_id=project_id)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # get_run_url está marcado como deprecado
+            return str(client.get_run_url(run=cast(Any, run), project_id=project_id))
+    except Exception:  # noqa: BLE001 — el link es opcional
+        return ""
+
+
+def flush_traces() -> None:
+    """Espera a que se suban las trazas pendientes (antes de terminar un script)."""
+    try:
+        from langchain_core.tracers.langchain import wait_for_all_tracers
+
+        wait_for_all_tracers()
+    except Exception:  # noqa: BLE001
+        pass

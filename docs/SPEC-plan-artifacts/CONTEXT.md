@@ -1,6 +1,6 @@
 # CONTEXT — estado actual del proyecto
 
-_Última actualización: Iteración 7 (interfaz Streamlit)._
+_Última actualización: Iteración 8 (evaluación)._
 
 ## Current state
 - Proyecto Python 3.11 gestionado con `uv` (`pyproject.toml` + `uv.lock`), sin empaquetar (`[tool.uv] package = false`): los módulos se importan desde la raíz del repo.
@@ -31,6 +31,11 @@ _Última actualización: Iteración 7 (interfaz Streamlit)._
 | `ui/upload.py` | `IngestResult`, `run_ingestion(pdf_name, data, settings)`, `render_table_summary`, `render_result`, `render(settings, missing)`; resultado en `st.session_state["last_ingest"]` |
 | `ui/explore.py` | `render(settings)`, `columns_frame(meta)` |
 | `ui/ask.py` | `HistoryEntry`, `run_question`, `render_outcome`, `render_entry`, `render(settings, missing)`; historial en `st.session_state["ask_history"]`; claves de widgets `example`, `ask_example`, `ask_input` |
+| `eval/scoring.py` | `close`, `obtained_pool`, `score(question, status, code_result) -> Score(status_ok, values_ok, correct, details)`, `expected_text` (BR-030, D-035) |
+| `eval/run_local.py` | `uv run python -m eval.run_local [--id X] [--doc Y]`: `load_questions`, `run_question`, `evaluate(questions, services, store, project)`, `render_report`, `write_outputs`, `missing_docs`; escribe `EVALUATION.md` y `eval/last_run.json` |
+| `eval/run_langsmith.py` | `uv run python -m eval.run_langsmith [--doc Y]`: `sync_dataset`, `make_target`, evaluadores `estado`, `valores`, `correcta`, resumen `exactitud` |
+| `tests/eval/` | Tests de `scoring`, `run_local` (Analista simulado) y `run_langsmith` (cliente falso) |
+| `tests/ingestion/test_indec_questions.py` | Recalcula los valores esperados de INDEC desde las tablas extraídas |
 | `tests/ui/` | `conftest.py` (`UiEnv`, fixture `ui_env` que reemplaza `ui.runtime` con fakes, `share_analyst`, `uncovered_analyst`), `test_app.py` (AppTest), `test_errors.py` |
 | `agents/ingestion/pdf_loader.py` | `open_pdf`, `load_pdf`, `read_pdf`, `compute_doc_id`; dataclasses `LoadedPdf`, `PageData`, `TextBlock`, `PageImage`; errores `PdfOpenError`, `NoTextLayerError` |
 | `agents/ingestion/extract.py` | `extract_tables`, `RawTable`, `ExtractionWarning`, `split_header`, `flatten_header`, `is_data_number`, `clean_cell`, `CAPTION_RE`; CLI `main` |
@@ -63,7 +68,7 @@ _Última actualización: Iteración 7 (interfaz Streamlit)._
 | `scripts/make_sample_pdf.py` | Genera el PDF sintético (reportlab, `invariant=1`) y `tests/fixtures/sample_truth.json`; `build(pdf_path, truth_path)` |
 | `scripts/make_test_fixtures.py` | `build_all(out_dir) -> dict[nombre, Path]` y `FIXTURES` (caso y resultado esperado de cada PDF de borde) |
 | `tests/fixtures/sample_truth.json` | Por tabla: `key`, `caption`, `section_title`, `paragraph_before`, `footnote`, `paragraph_after`, `columns` (nombres aplanados esperados), `rows_text` (celdas como se imprimen), `values` (valores normalizados esperados; `null` = s/d), `header_rows`, `line_style` (`grid`/`horizontal`), `pages` (1-based), `n_rows`, `n_cols` |
-| `eval/questions.yaml` | 11 preguntas del PDF sintético (`syn-01`…`syn-11`); campos `id, doc, question, expected_status, expected_values[{label, value\|values, unit}], expected_missing, tables, kind, notes` |
+| `eval/questions.yaml` | 16 preguntas: 11 del PDF sintético (`syn-01`…`syn-11`) y 5 de INDEC (`ind-01`…`ind-05`); campos `id, doc, question, expected_status, expected_values[{label, value\|values, unit}], expected_missing, tables, kind, notes` |
 | `tests/conftest.py` | Fixture autouse que limpia variables de entorno de servicios; `make_settings(**overrides)` crea `Settings` sin leer `.env`; `edge_pdfs` (scope session) genera los PDFs de borde en un tmp y devuelve `dict[nombre, Path]` |
 | `tests/test_config.py`, `tests/test_llm.py`, `tests/test_tracing.py` | Tests de la iteración 1 |
 | `tests/test_sample_pdf.py`, `tests/test_edge_pdfs.py`, `tests/test_questions.py` | Tests de la iteración 2 |
@@ -95,6 +100,7 @@ _Última actualización: Iteración 7 (interfaz Streamlit)._
 - `agents.analyst.graph.answer_question(question, question_id=None, services=None, settings=None) -> AnalystState` y `stream_answer(...)` → `(nodo, actualización)` con `log: [línea]`. `to_outcome(state) -> AnalystOutcome(question, status, error, answer, code_result, missing[MissingInfo(subquestion_id, text, reason, related_table)], tables[UsedTable(table_id, name, pages, pdf_name)], code, executions[ExecutionSummary(attempt, code, stdout, stderr, exit_code, duration_s, backend, timed_out, rejected, error)], retries)`. Nodos: `understand`, `retrieve`, `select`, `generate_code`, `execute`, `validate_output`, `decide_status`, `answer` (este último devuelve solo `{"answer": ...}`).
 - `AnalystServices(plan, select, code, write, embeddings_factory, index_factory, store, run_code, max_retries, retrieval_k, sandbox_backend, model)`; los cuatro LLM son `(mensajes, config) -> resultado`. `default_services(settings)` puede lanzar `SandboxUnavailable`.
 - `LLM_CODE_MODEL` (opcional) en `Settings`: modelo para generar código; vacío = `LLM_MODEL`. `get_chat_model(settings=None, temperature=0.0, model=None)`.
+- `services.tracing.trace_url(run_id, project) -> str` ("" si no se puede) y `flush_traces()`; `answer_question(..., run_id=UUID)` fija el id de la traza raíz.
 - `services.tracing.run_config(kind: Literal["ingest","analyst"], label: str, **metadata) -> RunnableConfig` — `run_name` = `ingest:<label>` o `analyst:<label[:60]>`, `tags=[kind]`, metadata sin valores `None`.
 
 ## Conventions & invariants
@@ -115,11 +121,13 @@ uv run ruff check .
 uv run mypy agents services
 uv run python scripts/check_services.py      # requiere .env completo y red (PC del alumno)
 uv run streamlit run app.py                 # la app (PC del alumno, con .env)
-uv run mypy agents services ui app.py
+uv run mypy agents services ui eval app.py
+uv run python -m eval.run_local             # EVALUATION.md (PC del alumno)
+uv run python -m eval.run_langsmith         # dataset + experimento en LangSmith
 ```
 
 ## Known gaps
-- Evaluación (8) y documentación final (9). Los tests de Docker solo corren en la PC del alumno. La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
+- Documentación final (9). La corrida real de la evaluación la hace el alumno. Los tests de Docker solo corren en la PC del alumno. La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
 - PDF de INDEC: lo agrega el alumno (necesario en iteración 3). Preguntas sobre ese PDF: iteración 8.
 - Limitaciones conocidas de la extracción (documentar en README): en el Cuadro 3 de INDEC (p. 13) PyMuPDF mezcla dos columnas en una celda ("-3,1 8.883") y deja encabezados cortados ("A preci Cantidad corrient"); la tabla de diagnósticos de la p. 35 no tiene epígrafe; los títulos de sección de INDEC con el mismo tamaño que el cuerpo no se detectan (el Cuadro 8 hereda "3.3 …"); el respaldo `hrules` asume que cada columna tiene datos alineados (falla si una columna está vacía en todas las filas). La página 1 de INDEC genera un aviso `image_region` por las imágenes de tapa (falso positivo inofensivo).
 - No usamos `table.header` de PyMuPDF (toma el epígrafe como encabezado externo): el encabezado se detecta con `split_header` sobre `table.extract()`.

@@ -66,6 +66,23 @@ def _present(term: str, haystack: list[str]) -> bool:
     return any(needle == item or re.search(rf"\b{re.escape(needle)}\b", item) for item in haystack)
 
 
+_YEAR_TOKEN_RE = re.compile(r"\b(?:19|20)\d{2}\b")
+
+
+def _period_present(period: str, haystack: list[str]) -> bool:
+    """Un período compuesto ("enero 2026", "2026 hasta agosto", "acumulado a agosto de 2026")
+    está presente si cada año y cada mes que nombra aparece en alguna parte de las tablas: en
+    las tablas reales el mes suele ser una fila y el año, una columna o el epígrafe."""
+    n = normalize(period)
+    years = _YEAR_TOKEN_RE.findall(n)
+    months = [m for m in _MONTHS if re.search(rf"\b{m}\b", n)]
+    if not years and not months:
+        return _present(period, haystack)
+    return all(any(y in item for item in haystack) for y in years) and all(
+        any(re.search(rf"\b{m}\b", item) for item in haystack) for m in months
+    )
+
+
 def _describe(tables: list[Candidate]) -> str:
     parts = []
     for t in tables:
@@ -83,7 +100,7 @@ def check_periods_and_entities(
     if not cov.covered:
         return cov
     haystack, text_haystack = _haystack(tables), _haystack(tables, with_text=True)
-    absent = [p for p in sub.periods if is_checkable_period(p) and not _present(p, haystack)]
+    absent = [p for p in sub.periods if is_checkable_period(p) and not _period_present(p, haystack)]
     absent += [e for e in sub.entities if is_checkable_entity(e) and not _present(e, text_haystack)]
     if not absent:
         return cov

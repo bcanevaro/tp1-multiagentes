@@ -17,7 +17,7 @@
 questions:
   - id: syn-01
     doc: informe_sintetico.pdf
-    question: "¿Cuál fue el crecimiento interanual promedio de los ingresos totales del sector público entre 2019 y 2023?"
+    question: "¿Cuál fue el promedio simple de las variaciones interanuales de los ingresos totales del sector público entre 2019 y 2023?"
     expected_status: answered
     expected_values:
       - label: "Crecimiento interanual promedio de los ingresos totales 2019-2023"
@@ -25,7 +25,7 @@ questions:
         unit: "%"
     tables: ["Cuadro 1"]
     kind: una tabla; promedio de variaciones interanuales (2020, 2021, 2022 y 2023)
-    notes: "Variaciones: 32,57 %; 52,52 %; 90,32 %; 164,10 %. Promedio aritmético."
+    notes: "Variaciones: 32,57 %; 52,52 %; 90,32 %; 164,10 %. Promedio aritmético. Antes decía 'crecimiento interanual promedio', que el LLM leyó como tasa compuesta (78,55 %); se reformuló para quitar la ambigüedad (D-030)."
 
   - id: syn-02
     doc: informe_sintetico.pdf
@@ -128,5 +128,63 @@ questions:
     tables: ["Cuadro 2"]
     kind: falta una entidad
 
-  # Preguntas sobre el PDF real de INDEC (indec_ica.pdf): se agregan en la Iteración 8,
-  # con los valores esperados verificados a mano contra el PDF.
+  # ---------------------------------------------------------------------------------------
+  # PDF real: INDEC, Intercambio comercial argentino (indec_ica.pdf, cifras de agosto de 2026).
+  # Valores calculados con las cifras publicadas (millones de USD) y verificados contra el PDF
+  # por el alumno; tests/test_questions.py los recalcula desde las tablas extraídas.
+  # ---------------------------------------------------------------------------------------
+
+  - id: ind-01
+    doc: indec_ica.pdf
+    question: "¿Qué porcentaje de las exportaciones argentinas acumuladas hasta agosto de 2026 se originó en la provincia de Santa Fe?"
+    expected_status: answered
+    expected_values:
+      - label: "Participación de Santa Fe en las exportaciones acumuladas a agosto de 2026"
+        value: 20.4408
+        unit: "%"
+    tables: ["Cuadro 10"]
+    kind: una tabla real; cociente entre una fila y el total (13.746 / 67.248)
+
+  - id: ind-02
+    doc: indec_ica.pdf
+    question: "¿Cuál fue el saldo comercial promedio mensual entre enero y agosto de 2026?"
+    expected_status: answered
+    expected_values:
+      - label: "Saldo comercial promedio mensual enero-agosto 2026"
+        value: 2281.25
+        unit: "millones de USD"
+    tables: ["Cuadro 1"]
+    kind: una tabla real; promedio de 8 meses
+    notes: "Saldos mensuales 2026: 2.189; 797; 2.581; 2.713; 3.450; 2.235; 2.098; 2.187 (suma 18.250). Con el acumulado publicado (18.249) da 2.281,1, dentro de la tolerancia."
+
+  - id: ind-03
+    doc: indec_ica.pdf
+    question: "¿Qué porcentaje de las exportaciones totales de agosto de 2026 correspondió al sector automotriz?"
+    expected_status: answered
+    expected_values:
+      - label: "Exportaciones del sector automotriz / exportaciones totales, agosto de 2026"
+        value: 9.8840
+        unit: "%"
+    tables: ["Cuadro 7", "Cuadro 1"]
+    kind: multitabla real; exportaciones automotrices (878) sobre el total del mes (8.883)
+
+  - id: ind-04
+    doc: indec_ica.pdf
+    question: "¿Cuánto exportó la Argentina en septiembre de 2026?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "El informe llega hasta agosto de 2026; septiembre solo tiene datos de 2025."
+    tables: ["Cuadro 1"]
+    kind: falta un período (la fila existe, pero sin dato para 2026)
+
+  - id: ind-05
+    doc: indec_ica.pdf
+    question: "¿Cuánto exportó la región Patagonia en agosto de 2026 y cuánto creció respecto de agosto de 2025?"
+    expected_status: partial
+    expected_values:
+      - label: "Exportaciones de la región Patagonia, agosto de 2026"
+        value: 1469
+        unit: "millones de USD"
+    expected_missing: "El origen de las exportaciones por región solo se publica para 2026; no hay dato de Patagonia en agosto de 2025."
+    tables: ["Cuadro 9"]
+    kind: falta un período para una parte de la pregunta
