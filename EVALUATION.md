@@ -1,6 +1,6 @@
 # Evaluación del Agente Analista
 
-Generado por `uv run python -m eval.run_local` (FR-062). Corrección según BR-030: el estado tiene que coincidir y, para `answered`/`partial`, cada valor esperado tiene que aparecer entre los resultados del código con tolerancia relativa de 0,5 % (absoluta de 0,01 si el esperado es 0).
+Generado por `uv run python -m eval.run_local`. Una respuesta es correcta si el estado coincide con el esperado y, para `answered`/`partial`, cada valor esperado tiene que aparecer entre los resultados del código con tolerancia relativa de 0,5 % (absoluta de 0,01 si el esperado es 0).
 
 - **Fecha:** 2026-10-05 21:00
 - **Modelo:** `gpt-4.1-mini`
@@ -24,11 +24,36 @@ Generado por `uv run python -m eval.run_local` (FR-062). Corrección según BR-0
 | Estado esperado: `cannot_answer` | 6/6 (100%) |
 | Estado esperado: `partial` | 2/2 (100%) |
 
+## Trazas representativas
+
+Links públicos de LangSmith (se abren sin cuenta):
+
+- **Respuesta completa con dos tablas del PDF real** (`ind-03`, peso del sector automotriz en las exportaciones de agosto de 2026): https://smith.langchain.com/public/2183c165-d3cf-4e3b-9412-a88335229d5a/r/8c6c0931-9f58-49dc-8e36-35e389bf9951
+- **Respuesta parcial** (`syn-04`: responde qué departamento tuvo más desempleo y explica que ninguna tabla informa el promedio provincial, sin calcularlo): https://smith.langchain.com/public/4ade60ee-1d51-48d7-8b55-30f9750d0151/r/50298fd4-00bd-4e28-8fcd-1797ff0d8ce0
+- **Con reintentos:** en la corrida final ninguna pregunta necesitó reintentar el código, así que no hay traza de este tipo en el reporte. Durante el desarrollo sí hubo reintentos reales: el filtro de seguridad rechazó un programa que usaba `exit()` y otro que llamaba a `.rename` (que se parecía a una operación de archivos), y en un tercer caso el código devolvió un texto donde iba un número; en los tres el segundo programa, generado con el error del primero, respondió bien. Los tests del grafo verifican ese ciclo (un fallo seguido de un acierto, y fallos hasta agotar los reintentos).
+
+## Análisis
+
+**Resultado final: 16/16.** Todas las preguntas obtienen el estado esperado y, cuando hay números, el valor esperado con tolerancia de 0,5 %. Las 6 preguntas que no se pueden responder explican qué dato falta y qué cubre la tabla más parecida, sin dar números calculados.
+
+**Cómo se llegó.** El set se corrió varias veces durante el desarrollo y cada falla se corrigió en el sistema, no en las preguntas (salvo una, ver abajo):
+
+- Primeras corridas sobre el PDF sintético (8/11 estados correctos): el chequeo automático de cobertura buscaba textual períodos como "todos los años disponibles" y entidades como "provincia", y descartaba preguntas que sí tenían datos; y en `syn-04` el modelo reemplazó el promedio provincial por el promedio simple de los departamentos. Se acotó el chequeo y se agregó uno específico para valores de comparación.
+- Después, con los estados bien, aparecieron errores de valor: proporciones devueltas como fracción (0,0113 en vez de 1,13 %) y una parte sin datos que el código calculó igual dentro de otra subpregunta. Se exigió porcentaje y se dejó de pasarle al generador de código la pregunta completa: solo recibe las partes que tiene que calcular y, aparte, las que no.
+- `syn-01` decía "crecimiento interanual promedio", que el modelo leyó como tasa compuesta (78,55 %) y no como promedio de las variaciones (84,88 %). Las dos lecturas son válidas, así que se reformuló la pregunta.
+- Primera corrida con las preguntas de INDEC: 14/16. `ind-01` e `ind-02` dieron "no se puede responder" porque el chequeo de períodos buscaba "enero 2026" como frase, cuando en el cuadro de INDEC el mes es una fila y el año una columna. Ahora el mes y el año se verifican por separado.
+
+**Qué tener en cuenta al leer el 16/16.**
+
+- Son 16 preguntas y el sistema se ajustó mirándolas, así que el resultado mide sobre todo que los casos previstos funcionan; no estima la tasa de acierto sobre preguntas nuevas. Las 5 preguntas de INDEC se escribieron después de cerrar el Analista y fallaron 2 en su primera corrida, lo que da una idea más realista.
+- La corrida final reutilizó muchas respuestas del modelo guardadas en la caché local (por eso tardó 68 s). Con temperatura 0 las respuestas son casi siempre iguales, pero una corrida sin caché puede variar en algún caso.
+- Los chequeos automáticos de cobertura se basan en palabras (años, meses, nombres de filas, "promedio provincial"). Una pregunta que exprese lo mismo con otras palabras depende solo del criterio del modelo.
+
 ## Resultados por pregunta
 
 | ID | Estado esperado | Estado obtenido | Respuesta esperada | Respuesta obtenida | Correcta | Reintentos | Traza |
 |---|---|---|---|---|---|---|---|
-| syn-01 | `answered` | `answered` | Crecimiento interanual promedio de los ingresos totales 2019-2023: 84,88 % | [q1] Promedio variación interanual ingresos totales sector público: 84,88 % | ✅ | 0 | [ver](https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/cb45e848-6b95-4dfa-b26c-0ef17435da57?poll=true) |
+| syn-01 | `answered` | `answered` | Promedio de las variaciones interanuales de los ingresos totales 2019-2023: 84,88 % | [q1] Promedio variación interanual ingresos totales sector público: 84,88 % | ✅ | 0 | [ver](https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/cb45e848-6b95-4dfa-b26c-0ef17435da57?poll=true) |
 | syn-02 | `answered` | `answered` | Gasto en ciencia y tecnología / gastos totales: 2019: 1,13 %; 2020: 1,07 %; 2021: 1,17 %; 2022: 1,23 %; 2023: 1,15 % | [q1] Proporción del gasto en ciencia y tecnología respecto a los gastos totales por año: 2019: 1,13 %; 2020: 1,07 %; 2021: 1,17 %; 2022: 1,23 %; 2023: 1,15 % | ✅ | 0 | [ver](https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/f4587987-18ea-4aba-a179-b33bdf11d78d?poll=true) |
 | syn-03 | `cannot_answer` | `cannot_answer` | Falta: La tabla de finanzas públicas cubre 2019-2023; 2024 no está disponible. | Falta: Datos para el año 2024 | ✅ | 0 | [ver](https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/0ac451fd-5c89-4f43-9a57-07bfffb8acda?poll=true) |
 | syn-04 | `partial` | `partial` | Departamento con mayor desempleo en 2023 (Norte): 9,8 % · Falta: Ninguna tabla informa un promedio provincial de desempleo; no se reemplaza por el promedio de los departamentos. | [q1] Departamento con la tasa de desempleo más alta en 2023: Norte: 9,8 % · Falta: Promedio provincial de tasa de desempleo en 2023 | ✅ | 0 | [ver](https://smith.langchain.com/o/f77ee408-f756-4ed9-a57a-ab9c0c8e5426/projects/p/ed1144b8-92a1-4679-9b91-36eaa85d3578/r/50298fd4-00bd-4e28-8fcd-1797ff0d8ce0?poll=true) |
@@ -100,7 +125,7 @@ Respuesta del agente:
 
 ### syn-06 — ¿Cuál fue la tasa de desempleo de la provincia en 2023 calculada como el promedio de los departamentos ponderado por su población?
 
-- **Caso:** multitabla; la pregunta define explícitamente cómo calcular el promedio (excepción de BR-013)
+- **Caso:** multitabla; la pregunta define explícitamente cómo calcular el promedio (excepción a la regla del valor de comparación)
 - **Tablas usadas:** Cuadro 2, Cuadro 5 (esperadas: Cuadro 2, Cuadro 5) ✅
 - **Tiempo:** 4.1 s
 

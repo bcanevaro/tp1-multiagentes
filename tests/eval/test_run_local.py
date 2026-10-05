@@ -98,7 +98,8 @@ def test_scores_and_statuses(runs: Any) -> None:
 
 def test_vc068_report_has_one_row_per_question_with_six_fields(runs: Any, tmp_path: Path) -> None:
     results, _ = runs
-    report = render_report(results, {"Modelo": "`fake`"})
+    report = render_report(results, {"Modelo": "`fake`"}, notes="## Trazas representativas\n- x")
+    assert report.index("## Trazas representativas") < report.index("## Resultados por pregunta")
     header = (
         "| ID | Estado esperado | Estado obtenido | Respuesta esperada | Respuesta obtenida "
         "| Correcta | Reintentos | Traza |"

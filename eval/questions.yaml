@@ -12,7 +12,7 @@
 #   kind             qué tipo de caso cubre
 #
 # Los valores esperados del PDF sintético se verifican contra scripts/sample_data.py en
-# tests/test_questions.py. Tolerancia de corrección (BR-030): 0,5 % relativa.
+# tests/test_questions.py. Tolerancia de corrección: 0,5 % relativa.
 
 questions:
   - id: syn-01
@@ -20,12 +20,12 @@ questions:
     question: "¿Cuál fue el promedio simple de las variaciones interanuales de los ingresos totales del sector público entre 2019 y 2023?"
     expected_status: answered
     expected_values:
-      - label: "Crecimiento interanual promedio de los ingresos totales 2019-2023"
+      - label: "Promedio de las variaciones interanuales de los ingresos totales 2019-2023"
         value: 84.8792
         unit: "%"
     tables: ["Cuadro 1"]
     kind: una tabla; promedio de variaciones interanuales (2020, 2021, 2022 y 2023)
-    notes: "Variaciones: 32,57 %; 52,52 %; 90,32 %; 164,10 %. Promedio aritmético. Antes decía 'crecimiento interanual promedio', que el LLM leyó como tasa compuesta (78,55 %); se reformuló para quitar la ambigüedad (D-030)."
+    notes: "Variaciones: 32,57 %; 52,52 %; 90,32 %; 164,10 %. Promedio aritmético. Antes decía 'crecimiento interanual promedio', que el LLM leyó como tasa compuesta (78,55 %); se reformuló para quitar la ambigüedad."
 
   - id: syn-02
     doc: informe_sintetico.pdf
@@ -79,7 +79,7 @@ questions:
         value: 7.4926
         unit: "%"
     tables: ["Cuadro 2", "Cuadro 5"]
-    kind: multitabla; la pregunta define explícitamente cómo calcular el promedio (excepción de BR-013)
+    kind: multitabla; la pregunta define explícitamente cómo calcular el promedio (excepción a la regla del valor de comparación)
 
   - id: syn-07
     doc: informe_sintetico.pdf

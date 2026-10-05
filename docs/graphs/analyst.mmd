@@ -1,0 +1,31 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	understand(understand)
+	retrieve(retrieve)
+	select(select)
+	generate_code(generate_code)
+	execute(execute)
+	validate_output(validate_output)
+	decide_status(decide_status)
+	answer(answer)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> understand;
+	decide_status --> answer;
+	execute --> validate_output;
+	generate_code --> execute;
+	retrieve -.-> decide_status;
+	retrieve -.-> select;
+	select -.-> decide_status;
+	select -.-> generate_code;
+	understand --> retrieve;
+	validate_output -.-> decide_status;
+	validate_output -.-> generate_code;
+	answer --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

@@ -1,6 +1,6 @@
 # CONTEXT — estado actual del proyecto
 
-_Última actualización: Iteración 8 (evaluación)._
+_Última actualización: Iteración 9 (documentación final). Describe el sistema entregado._
 
 ## Current state
 - Proyecto Python 3.11 gestionado con `uv` (`pyproject.toml` + `uv.lock`), sin empaquetar (`[tool.uv] package = false`): los módulos se importan desde la raíz del repo.
@@ -36,6 +36,12 @@ _Última actualización: Iteración 8 (evaluación)._
 | `eval/run_langsmith.py` | `uv run python -m eval.run_langsmith [--doc Y]`: `sync_dataset`, `make_target`, evaluadores `estado`, `valores`, `correcta`, resumen `exactitud` |
 | `tests/eval/` | Tests de `scoring`, `run_local` (Analista simulado) y `run_langsmith` (cliente falso) |
 | `tests/ingestion/test_indec_questions.py` | Recalcula los valores esperados de INDEC desde las tablas extraídas |
+| `README.md` | Documentación para quien corrige: instalación, uso, diagramas, decisiones, evaluación, limitaciones, problemas frecuentes, créditos |
+| `EVALUATION.md` | Reporte de `eval.run_local` (corrida final 16/16) + `eval/notes.md` |
+| `eval/notes.md` | Trazas representativas y análisis, escritos a mano; `eval.run_local` los copia en cada reporte |
+| `docs/ARCHITECTURE.md` | Estados de los grafos, contratos, persistencia, sandbox, servicios, evaluación y tests |
+| `docs/graphs/*.mmd`, `scripts/export_graphs.py` | Diagramas Mermaid de los grafos (`draw_mermaid()`); `uv run python scripts/export_graphs.py` los regenera |
+| `tests/test_docs.py` | Docs sin referencias internas, diagramas al día, variables del `.env` documentadas |
 | `tests/ui/` | `conftest.py` (`UiEnv`, fixture `ui_env` que reemplaza `ui.runtime` con fakes, `share_analyst`, `uncovered_analyst`), `test_app.py` (AppTest), `test_errors.py` |
 | `agents/ingestion/pdf_loader.py` | `open_pdf`, `load_pdf`, `read_pdf`, `compute_doc_id`; dataclasses `LoadedPdf`, `PageData`, `TextBlock`, `PageImage`; errores `PdfOpenError`, `NoTextLayerError` |
 | `agents/ingestion/extract.py` | `extract_tables`, `RawTable`, `ExtractionWarning`, `split_header`, `flatten_header`, `is_data_number`, `clean_cell`, `CAPTION_RE`; CLI `main` |
@@ -127,7 +133,7 @@ uv run python -m eval.run_langsmith         # dataset + experimento en LangSmith
 ```
 
 ## Known gaps
-- Documentación final (9). La corrida real de la evaluación la hace el alumno. Los tests de Docker solo corren en la PC del alumno. La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
+- Pendiente del alumno: link del video demo en el README y la verificación desde un clon limpio. Los tests de Docker solo corren en la PC del alumno. La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
 - PDF de INDEC: lo agrega el alumno (necesario en iteración 3). Preguntas sobre ese PDF: iteración 8.
 - Limitaciones conocidas de la extracción (documentar en README): en el Cuadro 3 de INDEC (p. 13) PyMuPDF mezcla dos columnas en una celda ("-3,1 8.883") y deja encabezados cortados ("A preci Cantidad corrient"); la tabla de diagnósticos de la p. 35 no tiene epígrafe; los títulos de sección de INDEC con el mismo tamaño que el cuerpo no se detectan (el Cuadro 8 hereda "3.3 …"); el respaldo `hrules` asume que cada columna tiene datos alineados (falla si una columna está vacía en todas las filas). La página 1 de INDEC genera un aviso `image_region` por las imágenes de tapa (falso positivo inofensivo).
 - No usamos `table.header` de PyMuPDF (toma el epígrafe como encabezado externo): el encabezado se detecta con `split_header` sobre `table.extract()`.

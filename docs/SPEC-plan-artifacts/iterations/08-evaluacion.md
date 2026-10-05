@@ -1,7 +1,7 @@
 # Iteración 08 — Evaluación local y evals en LangSmith (bonus)
 
-**Estado**: PENDIENTE de los criterios [usuario].
-**Commit**: lo hace el alumno con el mensaje `Evaluación: set de preguntas completo, corrida local y experimento en LangSmith`. SHA: _pendiente_.
+**Estado**: COMPLETA (criterios PASS; trazas con el desvío documentado).
+**Commit**: lo hace el alumno con el mensaje `Evaluación: set de preguntas completo, corrida local y experimento en LangSmith`. SHA: `055f5bec6c6ff57d42b60e0ef672522a1dab05a5`.
 
 ## Resultados de criterios
 | Criterio | Test | Resultado |

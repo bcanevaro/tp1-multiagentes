@@ -1,11 +1,11 @@
-"""Evaluación local del Analista (FR-062).
+"""Evaluación local del Analista.
 
 Uso:
     uv run python -m eval.run_local                       (todas las preguntas)
     uv run python -m eval.run_local --doc indec_ica.pdf   (las de un PDF)
     uv run python -m eval.run_local --id syn-01 --id ind-02
 
-Corre el Analista sobre cada pregunta de `eval/questions.yaml`, la corrige según BR-030 y
+Corre el Analista sobre cada pregunta de `eval/questions.yaml`, la corrige (ver `eval/scoring.py`) y
 escribe `EVALUATION.md` (por pregunta: estado esperado y obtenido, respuesta esperada y obtenida,
 correcta/incorrecta, reintentos y link a la traza) y `eval/last_run.json` con los datos crudos.
 Los PDF de las preguntas tienen que estar ingeridos en esta PC.
@@ -37,6 +37,8 @@ from services.tracing import flush_traces, trace_url
 QUESTIONS_FILE = PROJECT_ROOT / "eval" / "questions.yaml"
 REPORT_FILE = PROJECT_ROOT / "EVALUATION.md"
 RAW_FILE = PROJECT_ROOT / "eval" / "last_run.json"
+# Texto escrito a mano (trazas representativas y análisis) que se copia en cada reporte.
+NOTES_FILE = PROJECT_ROOT / "eval" / "notes.md"
 CUADRO_RE = re.compile(r"^(Cuadro \d+)")
 
 
@@ -135,7 +137,7 @@ def _pct(n: int, total: int) -> str:
     return f"{n}/{total} ({n / total:.0%})" if total else "0/0"
 
 
-def render_report(runs: list[QuestionRun], header: dict[str, str]) -> str:
+def render_report(runs: list[QuestionRun], header: dict[str, str], notes: str = "") -> str:
     total = len(runs)
     correct = sum(r.score.correct for r in runs)
     status_ok = sum(r.score.status_ok for r in runs)
@@ -144,8 +146,9 @@ def render_report(runs: list[QuestionRun], header: dict[str, str]) -> str:
     lines = [
         "# Evaluación del Agente Analista",
         "",
-        "Generado por `uv run python -m eval.run_local` (FR-062). Corrección según BR-030: el "
-        "estado tiene que coincidir y, para `answered`/`partial`, cada valor esperado tiene que "
+        "Generado por `uv run python -m eval.run_local`. Una respuesta es correcta si el "
+        "estado coincide con el esperado y, para `answered`/`partial`, cada valor esperado "
+        "tiene que "
         "aparecer entre los resultados del código con tolerancia relativa de 0,5 % (absoluta de "
         "0,01 si el esperado es 0).",
         "",
@@ -169,6 +172,8 @@ def render_report(runs: list[QuestionRun], header: dict[str, str]) -> str:
             lines.append(
                 f"| {label}: `{value}` | {_pct(sum(r.score.correct for r in group), len(group))} |"
             )
+    if notes.strip():
+        lines += ["", notes.strip()]
     lines += [
         "",
         "## Resultados por pregunta",
@@ -262,7 +267,8 @@ def evaluate(
 
 
 def write_outputs(runs: list[QuestionRun], header: dict[str, str], report: Path, raw: Path) -> None:
-    report.write_text(render_report(runs, header) + "\n", encoding="utf-8")
+    notes = NOTES_FILE.read_text(encoding="utf-8") if NOTES_FILE.exists() else ""
+    report.write_text(render_report(runs, header, notes) + "\n", encoding="utf-8")
     raw.write_text(
         json.dumps(
             {"header": header, "runs": [raw_record(r) for r in runs]}, ensure_ascii=False, indent=2

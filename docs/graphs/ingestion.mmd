@@ -1,0 +1,29 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	load_pdf(load_pdf)
+	extract_tables(extract_tables)
+	merge_continuations(merge_continuations)
+	collect_context(collect_context)
+	enrich(enrich)
+	validate(validate)
+	persist_and_index(persist_and_index)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> load_pdf;
+	collect_context --> enrich;
+	enrich --> validate;
+	extract_tables -.-> __end__;
+	extract_tables -.-> merge_continuations;
+	load_pdf -.-> __end__;
+	load_pdf -.-> extract_tables;
+	merge_continuations --> collect_context;
+	validate -.-> enrich;
+	validate -.-> persist_and_index;
+	persist_and_index --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
