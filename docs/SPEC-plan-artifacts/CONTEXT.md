@@ -1,13 +1,14 @@
 # CONTEXT — estado actual del proyecto
 
-_Última actualización: Iteración 5 (sandbox de ejecución)._
+_Última actualización: Iteración 7 (interfaz Streamlit)._
 
 ## Current state
 - Proyecto Python 3.11 gestionado con `uv` (`pyproject.toml` + `uv.lock`), sin empaquetar (`[tool.uv] package = false`): los módulos se importan desde la raíz del repo.
 - Configuración tipada (`services/config.py`) que lee `.env` y detecta variables obligatorias faltantes, en total o por funcionalidad.
 - Fábricas de chat y embeddings contra el proxy LiteLLM con caché SQLite local opcional (`services/llm.py`) y verificación de la dimensión de embeddings.
 - Helper de configuración de trazas LangSmith (`services/tracing.py`), todavía sin usar por ningún grafo.
-- `scripts/check_services.py` verifica en la PC del alumno los servicios externos. `app.py` es un placeholder que solo muestra el estado de la configuración. No hay agentes todavía.
+- `scripts/check_services.py` verifica en la PC del alumno los servicios externos. **UI Streamlit** (`uv run streamlit run app.py`): pestañas Subir PDF (progreso nodo por nodo, resumen por tabla, avisos y errores), Explorar (tablas del almacén local agrupadas por documento, datos completos y columnas) y Preguntar (historial tipo chat con estado coloreado, faltantes, tablas, código, salida y reintentos; progreso en vivo; preguntas de ejemplo). Barra lateral con la configuración sin claves. Si faltan variables, Subir y Preguntar quedan bloqueadas. Errores de LiteLLM, Pinecone y sandbox se muestran con `st.error` sin tirar la app.
+- **Agente Analista completo** (`agents/analyst/graph.py`): StateGraph `understand → retrieve → select → generate_code → execute → validate_output (⇄ generate_code) → decide_status → answer`, con cortes a `decide_status` si el índice está vacío o ninguna subpregunta está cubierta. Chequeos determinísticos FR-024/FR-024b/FR-024c, reintentos hasta `ANALYST_MAX_RETRIES`, estado por reglas (BR-010) y respuesta `cannot_answer` sin LLM. CLI: `uv run python -m agents.analyst.cli "<pregunta>"` o `--id syn-01` / `--doc informe_sintetico.pdf`. Probado con LLM simulados y sandbox real por subproceso; la corrida con servicios reales la hace el alumno.
 - **Sandbox** (`services/sandbox/`): `run_code(code, {table_id: parquet})` con filtro AST + backend Docker (`--network none`, solo lectura, 512 MB, 1 CPU, 64 procesos, usuario 10001) o subproceso (`python -I`, entorno vacío, directorio temporal con solo las tablas elegidas, red bloqueada en el preludio, timeout). `validate_execution` aplica FR-028 y devuelve `CodeResult`. Imagen: `sandbox/Dockerfile`.
 - **Agente de Ingesta completo** (`agents/ingestion/graph.py`): StateGraph `load_pdf → extract_tables → merge_continuations → collect_context → enrich ⇄ validate → persist_and_index`, con anotación por LLM (salida estructurada, una llamada por tabla en paralelo), validación BR-001…004 con reintento solo de las tablas inválidas, almacén Parquet+JSON, copia del PDF y Pinecone idempotente. CLI: `uv run python -m agents.ingestion.cli <pdf>`. Probado con servicios simulados; la ingesta real la corre el alumno.
 - Extracción determinística completa (sin LLM): carga del PDF, detección de tablas (PyMuPDF `lines` + respaldo propio por líneas horizontales), filtro de detecciones que no son tablas, aplanado de encabezados, normalización numérica, unión multipágina y contexto. Sobre el PDF sintético reproduce exactamente `sample_truth.json`; sobre INDEC obtiene los Cuadros 1-10 y la tabla de diagnósticos de la p. 35. CLI de diagnóstico: `uv run python -m agents.ingestion.extract <pdf>`.
@@ -23,7 +24,14 @@ _Última actualización: Iteración 5 (sandbox de ejecución)._
 | `services/llm.py` | `get_chat_model`, `with_structured`, `get_embeddings`, `check_embedding_dim`, cachés |
 | `services/tracing.py` | `run_name`, `run_config` |
 | `scripts/check_services.py` | Diagnóstico PASS/FAIL de .env, LiteLLM, salida estructurada, embeddings, Pinecone, LangSmith |
-| `app.py` | Placeholder de Streamlit |
+| `app.py` | App Streamlit: configuración, barra lateral y las 3 pestañas |
+| `ui/runtime.py` | `load_settings`, `ingestion_services`, `analyst_services`, `table_store`, `sandbox_label` (punto de inyección para tests) |
+| `ui/errors.py` | `classify(exc) -> (servicio, mensaje)`, `format_service_error`, `show_service_error(exc, during)` |
+| `ui/sidebar.py` | `render_sidebar(settings, missing)` |
+| `ui/upload.py` | `IngestResult`, `run_ingestion(pdf_name, data, settings)`, `render_table_summary`, `render_result`, `render(settings, missing)`; resultado en `st.session_state["last_ingest"]` |
+| `ui/explore.py` | `render(settings)`, `columns_frame(meta)` |
+| `ui/ask.py` | `HistoryEntry`, `run_question`, `render_outcome`, `render_entry`, `render(settings, missing)`; historial en `st.session_state["ask_history"]`; claves de widgets `example`, `ask_example`, `ask_input` |
+| `tests/ui/` | `conftest.py` (`UiEnv`, fixture `ui_env` que reemplaza `ui.runtime` con fakes, `share_analyst`, `uncovered_analyst`), `test_app.py` (AppTest), `test_errors.py` |
 | `agents/ingestion/pdf_loader.py` | `open_pdf`, `load_pdf`, `read_pdf`, `compute_doc_id`; dataclasses `LoadedPdf`, `PageData`, `TextBlock`, `PageImage`; errores `PdfOpenError`, `NoTextLayerError` |
 | `agents/ingestion/extract.py` | `extract_tables`, `RawTable`, `ExtractionWarning`, `split_header`, `flatten_header`, `is_data_number`, `clean_cell`, `CAPTION_RE`; CLI `main` |
 | `agents/ingestion/normalize.py` | `normalize_table`, `parse_number`, `MISSING_MARKERS` |
@@ -41,7 +49,14 @@ _Última actualización: Iteración 5 (sandbox de ejecución)._
 | `services/sandbox/result.py` | `ExecutionResult`, `CodeResult` (`results[ResultItem{subquestion_id, value: float \| list[LabeledValue{label,value}], unit, label}]`, `missing[MissingItem{subquestion_id, reason}]`, `conversions[str]`), `parse_code_result`, `validate_execution` |
 | `services/sandbox/backends.py` | `PRELUDE`, `prepare_workdir`, `run_subprocess`, `run_docker`, `docker_status(image)` (cacheado por proceso) |
 | `sandbox/Dockerfile` | python:3.11-slim + pandas 3.0.6, numpy 2.4.6, pyarrow 25.0.1; usuario 10001 |
-| `agents/analyst/` | Vacío |
+| `agents/analyst/schemas.py` | `SubQuestion`, `QueryPlan`, `SubquestionCoverage`, `Selection`, `GeneratedCode` (salidas del LLM); `Candidate`, `MissingInfo`, `ExecutionSummary`, `UsedTable`, `AnalystOutcome`; `Status`, `AnalystError` |
+| `agents/analyst/coverage.py` | `apply_deterministic_checks(subquestions, coverage, candidates)` (FR-024, FR-024b, FR-024c), `check_periods_and_entities`, `check_units`, `check_reference_value`, `is_checkable_period`, `GENERIC_ENTITIES`, `normalize` |
+| `agents/analyst/status.py` | `decide_status(subquestions, coverage, code_result, error) -> (status, missing)` (BR-010) |
+| `agents/analyst/prompts.py` | `plan_messages`, `select_messages`, `code_messages`, `answer_messages`, `describe_table` |
+| `agents/analyst/answer.py` | `fmt_number` (formato argentino), `fmt_with_unit`, `format_results`, `format_tables`, `format_missing`, `cannot_answer_text` |
+| `agents/analyst/graph.py` | `AnalystServices`, `default_services`, `AnalystState`, `build_analyst_graph`, `answer_question`, `stream_answer`, `to_outcome` |
+| `agents/analyst/cli.py` | CLI con progreso, resultado, código, salida, reintentos; `--id`/`--doc` comparan con el estado esperado |
+| `tests/analyst/` | `fakes.py` (`synthetic_tables()` con 4 tablas del PDF sintético, `populate(dir) -> (TableStore, InMemoryIndex)`, `Recorder`, `sub`, `plan`, `cover`, `code`, `make_services`), `test_coverage.py`, `test_status_answer.py`, `test_graph.py` |
 | `data/sample_pdfs/indec_ica.pdf` | PDF real de INDEC (ICA, cifras de agosto de 2026, 36 páginas) |
 | `data/sample_pdfs/informe_sintetico.pdf` | PDF sintético versionado (entregable de la consigna). Se regenera con `scripts/make_sample_pdf.py`. El alumno agregará `indec_ica.pdf` |
 | `scripts/sample_data.py` | Única fuente de los números del PDF sintético; `fmt_ar`, `fmt_ar_parens`, `export_total` |
@@ -77,6 +92,9 @@ _Última actualización: Iteración 5 (sandbox de ejecución)._
 - `services.table_store.TableStore`: `tables/{table_id}.parquet|.json`, `pdfs/{doc_id}.pdf` bajo `DATA_DIR`. Los textos se leen del Parquet como dtype `str` de pandas 3.
 - `services.sandbox.run_code(code, tables: dict[table_id, Path], *, settings=None, backend=None, timeout=None, guard=True) -> ExecutionResult(stdout, stderr, exit_code, duration_s, backend, timed_out, rejected)`. Dentro del programa existen `pd` y `load_table(table_id) -> DataFrame` (y `TABLES`); el programa debe imprimir como **última línea** un JSON `CodeResult`. Los errores muestran líneas de `program.py` (= código generado). `validate_execution(execution) -> (CodeResult | None, motivo | None)`.
 - `SANDBOX_IMAGE` (default `mas-tp-sandbox`) en `Settings`/`.env.example`; `SANDBOX_BACKEND=auto` elige Docker si `docker_status` da OK.
+- `agents.analyst.graph.answer_question(question, question_id=None, services=None, settings=None) -> AnalystState` y `stream_answer(...)` → `(nodo, actualización)` con `log: [línea]`. `to_outcome(state) -> AnalystOutcome(question, status, error, answer, code_result, missing[MissingInfo(subquestion_id, text, reason, related_table)], tables[UsedTable(table_id, name, pages, pdf_name)], code, executions[ExecutionSummary(attempt, code, stdout, stderr, exit_code, duration_s, backend, timed_out, rejected, error)], retries)`. Nodos: `understand`, `retrieve`, `select`, `generate_code`, `execute`, `validate_output`, `decide_status`, `answer` (este último devuelve solo `{"answer": ...}`).
+- `AnalystServices(plan, select, code, write, embeddings_factory, index_factory, store, run_code, max_retries, retrieval_k, sandbox_backend, model)`; los cuatro LLM son `(mensajes, config) -> resultado`. `default_services(settings)` puede lanzar `SandboxUnavailable`.
+- `LLM_CODE_MODEL` (opcional) en `Settings`: modelo para generar código; vacío = `LLM_MODEL`. `get_chat_model(settings=None, temperature=0.0, model=None)`.
 - `services.tracing.run_config(kind: Literal["ingest","analyst"], label: str, **metadata) -> RunnableConfig` — `run_name` = `ingest:<label>` o `analyst:<label[:60]>`, `tags=[kind]`, metadata sin valores `None`.
 
 ## Conventions & invariants
@@ -96,13 +114,15 @@ uv run pytest -q
 uv run ruff check .
 uv run mypy agents services
 uv run python scripts/check_services.py      # requiere .env completo y red (PC del alumno)
-uv run streamlit run app.py
+uv run streamlit run app.py                 # la app (PC del alumno, con .env)
+uv run mypy agents services ui app.py
 ```
 
 ## Known gaps
-- Analista (Iteración 6), UI (7), evaluación (8). Los tests de Docker solo corren en la PC del alumno. La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
+- Evaluación (8) y documentación final (9). Los tests de Docker solo corren en la PC del alumno. La ingesta real contra el proxy y Pinecone queda verificada por el alumno.
 - PDF de INDEC: lo agrega el alumno (necesario en iteración 3). Preguntas sobre ese PDF: iteración 8.
 - Limitaciones conocidas de la extracción (documentar en README): en el Cuadro 3 de INDEC (p. 13) PyMuPDF mezcla dos columnas en una celda ("-3,1 8.883") y deja encabezados cortados ("A preci Cantidad corrient"); la tabla de diagnósticos de la p. 35 no tiene epígrafe; los títulos de sección de INDEC con el mismo tamaño que el cuerpo no se detectan (el Cuadro 8 hereda "3.3 …"); el respaldo `hrules` asume que cada columna tiene datos alineados (falla si una columna está vacía en todas las filas). La página 1 de INDEC genera un aviso `image_region` por las imágenes de tapa (falso positivo inofensivo).
 - No usamos `table.header` de PyMuPDF (toma el epígrafe como encabezado externo): el encabezado se detecta con `split_header` sobre `table.extract()`.
 - OQ-1 resuelta con la consigna completa (spec v0.2): BR-003 exige descripción de 2 a 4 oraciones.
+- El índice de Pinecone es compartido pero el almacén Parquet+JSON es local: el Analista ignora IDs de Pinecone que no están en el almacén (D-028).
 - Servicios verificados en la PC del alumno: modelos `gpt-4.1-mini` / `text-embedding-3-small` (1536), los tres métodos de salida estructurada funcionan (se usa `function_calling`).

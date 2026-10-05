@@ -20,9 +20,19 @@ from tests.ingestion.conftest import SAMPLE
 from tests.ingestion.fakes import FakeAnnotator, make_services
 
 SPEC_METADATA_KEYS = {
-    "doc_id", "pdf_name", "pages", "name", "description", "columns", "row_headers",
-    "periods_covered", "entities_covered", "preview_markdown", "n_rows", "n_cols",
-}  # fmt: skip
+    "doc_id",
+    "pdf_name",
+    "pages",
+    "name",
+    "description",
+    "columns",
+    "row_headers",
+    "periods_covered",
+    "entities_covered",
+    "preview_markdown",
+    "n_rows",
+    "n_cols",
+}
 
 
 def test_full_ingestion_of_sample(tmp_path: Path) -> None:
@@ -140,9 +150,16 @@ def test_fr018_stream_reports_each_node_in_order(tmp_path: Path) -> None:
     events = list(stream_ingest(SAMPLE, services=make_services(tmp_path, FakeAnnotator({1: 1}))))
     nodes = [node for node, _ in events]
     assert nodes == [
-        "load_pdf", "extract_tables", "merge_continuations", "collect_context",
-        "enrich", "validate", "enrich", "validate", "persist_and_index",
-    ]  # fmt: skip
+        "load_pdf",
+        "extract_tables",
+        "merge_continuations",
+        "collect_context",
+        "enrich",
+        "validate",
+        "enrich",
+        "validate",
+        "persist_and_index",
+    ]
     assert all(update["log"] and update["log"][0].startswith(node) for node, update in events)
     assert "6 tablas lógicas (1 uniones" in events[2][1]["log"][0]
 
@@ -152,14 +169,55 @@ def test_nfr006_metadata_size_limit_with_huge_table() -> None:
         {"Fila": [f"fila {i} " + "x" * 300 for i in range(5000)], "Valor": range(5000)}
     )
     meta = TableMetadata(
-        table_id="d-t01", doc_id="d", name="Grande", description="Una. Dos.",
-        columns=[ColumnInfo(name=c, description="", dtype="str", unit="", scale="desconocida",
-                            value_type="texto") for c in df.columns],
-        row_header_column="Fila", row_headers=list(df["Fila"]), periods_covered=[],
-        entities_covered=[f"entidad {i}" for i in range(3000)], notes="",
-        source=Source(pdf_name="g.pdf", doc_id="d", pages=[1]), n_rows=5000, n_cols=2,
-    )  # fmt: skip
+        table_id="d-t01",
+        doc_id="d",
+        name="Grande",
+        description="Una. Dos.",
+        columns=[
+            ColumnInfo(
+                name=c,
+                description="",
+                dtype="str",
+                unit="",
+                scale="desconocida",
+                value_type="texto",
+            )
+            for c in df.columns
+        ],
+        row_header_column="Fila",
+        row_headers=list(df["Fila"]),
+        periods_covered=[],
+        entities_covered=[f"entidad {i}" for i in range(3000)],
+        notes="",
+        source=Source(pdf_name="g.pdf", doc_id="d", pages=[1]),
+        n_rows=5000,
+        n_cols=2,
+    )
     import json
 
     record = pinecone_metadata(meta, df)
     assert len(json.dumps(record, ensure_ascii=False).encode()) <= 38_000
+
+
+def test_service_error_on_every_table_stops_ingestion(tmp_path: Path) -> None:
+    """FR-043: si todas las llamadas al LLM fallan por el servicio (p. ej. clave inválida), no se
+    reintenta como si fueran metadatos inválidos: el error sube para que la UI lo muestre."""
+    import httpx
+    import openai
+
+    response = httpx.Response(401, request=httpx.Request("POST", "http://proxy.test/v1"))
+    calls: list[int] = []
+
+    def failing(jobs, pdf_name, config):  # type: ignore[no-untyped-def]
+        calls.append(len(jobs))
+        return [
+            openai.AuthenticationError("Invalid API key", response=response, body=None)
+            for _ in jobs
+        ]
+
+    services = make_services(tmp_path)
+    services.annotate = failing
+    with pytest.raises(openai.AuthenticationError):
+        ingest_pdf(SAMPLE, services=services)
+    assert len(calls) == 1
+    assert TableStore(tmp_path).list_tables() == []

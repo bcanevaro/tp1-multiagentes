@@ -111,3 +111,48 @@ Las decisiones de diseño principales del sistema están en el spec §10 (tomada
 
 ## D-022: Configuración del contenedor  (Iteration 5)
 **Decision**: imagen `mas-tp-sandbox` (python:3.11-slim + pandas/numpy/pyarrow con las mismas versiones que `uv.lock`), `--network none`, raíz de solo lectura, `/data` montado `ro`, `tmpfs /tmp` 64 MB, 512 MB de memoria, 1 CPU, 64 procesos, usuario 10001, contenedor eliminado al terminar. `docker_status(image)` se evalúa una vez por proceso (si se instala Docker con la app abierta, hay que reiniciarla).
+
+## D-023: LLM del Analista inyectados como funciones sobre mensajes  (Iteration 6)
+**Decision**: `AnalystServices` recibe cuatro funciones `(mensajes, config) -> resultado`: `plan` (`QueryPlan`), `select` (`Selection`), `code` (`GeneratedCode`) y `write` (texto), más fábricas de embeddings e índice, el `TableStore` y `run_code`. Los prompts se arman en los nodos (`agents/analyst/prompts.py`), así los tests verifican el contenido exacto de lo que recibe cada LLM con `Recorder`. El estado guarda modelos Pydantic (sin checkpointer no hace falta serializarlo).
+**Consequences**: cada llamada al LLM es un span hijo del nodo en LangSmith (se pasa el `config`).
+
+## D-024: `LLM_CODE_MODEL` opcional para la generación de código  (Iteration 6)
+**Decision** (elegida por el alumno): variable opcional; vacía = usa `LLM_MODEL` (`gpt-4.1-mini`). Permite probar un modelo más fuerte solo para el código sin cambiar el resto.
+
+## D-025: Números con formato argentino formateados por el sistema  (Iteration 6)
+**Decision** (elegida por el alumno): `fmt_number` (punto de miles, coma decimal; 2 decimales si |v| ≥ 1, si no 4; sin ceros finales). Los resultados se formatean ANTES de pasarlos al LLM redactor, que tiene la instrucción de copiarlos tal cual y no hacer cuentas.
+**Consequences**: la evaluación (iteración 8) compara contra `code_result` (floats), no contra el texto.
+
+## D-026: FR-024b acotado y columnas "año" de tablas anchas  (Iteration 6)
+**Context**: La versión inicial de FR-024b marcaba no cubierta cualquier columna con unidad desconocida o monto `unknown`, lo que daba falsos `cannot_answer` (p. ej. una columna Año, o "¿cuánto crecieron los salarios?" sin pedir valores reales). Al escribir los tests apareció además que excluir columnas *llamadas* como un año ("2021") anulaba el chequeo en tablas anchas, justo el caso de la pregunta syn-09.
+**Decision**: spec v0.5 — se excluyen solo las columnas identificadoras por nombre (Año, Mes, Período, Fecha, Trimestre); la regla nominal/real aplica a montos con `value_type = unknown` solo si la subpregunta menciona real/nominal/inflación/constantes/corrientes/poder adquisitivo; `ambiguity_ok` del LLM la desactiva.
+
+## D-027: La salida del código debe mencionar cada subpregunta cubierta  (Iteration 6)
+**Decision**: además de FR-028, `validate_output` exige que cada subpregunta cubierta aparezca en `results` o en `missing` del JSON; si falta alguna, la ejecución es inválida y se reintenta con ese motivo. Evita que una subpregunta "desaparezca" sin explicación.
+
+## D-028: Recuperación: unión de búsquedas y tablas ausentes del almacén local  (Iteration 6)
+**Decision**: se embebe cada `search_query`, se consulta Pinecone con `RETRIEVAL_K` por búsqueda, se deduplica por `table_id` quedando el mayor score (FR-021) y se toman hasta 10 candidatas. Los IDs que están en Pinecone pero no en el almacén local (p. ej. ingestados desde otra PC) se ignoran; si no queda ninguno, el error es `no_tables_indexed`.
+**Consequences**: el índice de Pinecone es compartido, el almacén es local: hay que ingerir los PDF en la misma PC donde se pregunta (se documenta en el README).
+
+## D-029: Ajustes tras la primera corrida real del Analista (spec v0.6)  (Iteration 6)
+**Context**: Con servicios reales, 8/11 preguntas sintéticas dieron el estado esperado. syn-02: el plan anotó el período "todos los años disponibles" y FR-024 lo buscó textual. syn-08: el plan anotó la entidad "provincia" (alcance del documento). syn-04: el LLM de selección dio por cubierto el "promedio provincial" y el código lo calculó como promedio simple de los departamentos (viola BR-013).
+**Decision**: (1) FR-024 verifica solo períodos concretos (con número o nombre de mes) e ignora palabras de alcance (`GENERIC_ENTITIES`); las entidades se buscan también en descripción, notas y título de sección. (2) FR-024c: chequeo determinístico de BR-013 (mismo enfoque "prompt + regla automática" que eligió el alumno para BR-004b en D-019). (3) Prompts reforzados: períodos/entidades en el plan, BR-013 en selección y código, y "value" nunca es texto (en syn-04 el primer intento puso el nombre del departamento como valor).
+**Consequences**: el chequeo de BR-013 se basa en palabras ("promedio provincial", "media nacional"…): una referencia expresada de otra forma queda a cargo del LLM.
+
+## D-030: Segunda corrida real: proporciones en %, partes sin datos fuera del código, syn-01 reformulada  (Iteration 6)
+**Context**: Segunda corrida: 11/11 estados correctos, pero (a) syn-02 devolvió proporciones como fracción (0,0113) con unidad "proporción"; (b) en syn-04 el código, que recibía la pregunta original, calculó igual la diferencia con el "promedio provincial" dentro del resultado de q1, y el redactor la informó; (c) syn-01 se calculó como tasa compuesta (78,55 %) en vez del promedio de variaciones (84,88 %): la pregunta era ambigua.
+**Decision**: (a) el prompt de código pide proporciones, variaciones y tasas en % (0-100). (b) `code_messages` ya no recibe la pregunta original: solo las subpreguntas cubiertas (autocontenidas) y una lista aparte de partes que NO hay que calcular, con su motivo; el redactor no da números para partes faltantes. (c) Elegido por el alumno: reformular syn-01 ("promedio simple de las variaciones interanuales"). Rechazado: aceptar ambos valores; fijar la lectura en el prompt (ajustaría el sistema a la evaluación).
+
+## D-031: Extras de la UI  (Iteration 7)
+**Decision** (elegida por el alumno): además de lo que pide el spec, la pestaña Preguntar muestra el progreso del Analista nodo por nodo mientras corre (como la ingesta) y ofrece un desplegable con las preguntas de `eval/questions.yaml` (se envían con su `question_id`, que queda en la traza).
+**Rejected** (por ahora): borrar un documento desde Explorar; descargar tablas en CSV.
+
+## D-032: Pestañas bloqueadas en vez de ocultas (FR-045)  (Iteration 7)
+**Context**: `st.tabs` no permite deshabilitar una pestaña.
+**Decision** (elegida por el alumno): las tres pestañas se ven siempre; si faltan variables, Subir y Preguntar muestran cuáles faltan y sus controles (subir, ingerir, ejemplos, chat) quedan con `disabled=True`. Explorar no necesita configuración. Un `.env` con un valor inválido se muestra como `st.error` sin tirar la app.
+
+## D-033: La UI accede a servicios a través de `ui/runtime.py`  (Iteration 7)
+**Decision**: `load_settings`, `ingestion_services`, `analyst_services` y `table_store` viven en `ui.runtime` y la UI los llama por atributo del módulo; los tests de `AppTest` los reemplazan con `monkeypatch` (almacén e índice en memoria, LLM simulados, sandbox real por subproceso).
+
+## D-034: Errores de servicio: clasificación por paquete y escalado en la ingesta  (Iteration 7)
+**Decision**: `ui.errors.classify` recorre la cadena `__cause__`/`__context__` y decide el servicio por el paquete de la clase (`openai` → LiteLLM, `pinecone` → Pinecone, `docker`, `langsmith`) o por tipo propio (`SandboxUnavailable`, `IndexDimensionError`, `ConfigurationError`/`EmbeddingDimensionError`). En la ingesta, si TODAS las llamadas al LLM de una ronda fallan con errores de conexión o autenticación (`openai`/`httpx`), el nodo `enrich` relanza el primero en vez de tratarlo como metadatos inválidos; antes, una clave inválida terminaba en "Ninguna tabla pasó la validación" tras 3 intentos por tabla, sin mencionar LiteLLM.

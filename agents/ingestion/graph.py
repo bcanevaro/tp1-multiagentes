@@ -77,6 +77,14 @@ class IngestionServices:
     index_name: str = ""
 
 
+_SERVICE_PACKAGES = ("openai", "httpx", "httpcore")
+
+
+def is_service_error(exc: BaseException) -> bool:
+    """Error de conexión o autenticación con el proxy (no de formato de la respuesta)."""
+    return type(exc).__module__.split(".")[0] in _SERVICE_PACKAGES
+
+
 def llm_annotator(settings: Settings) -> Annotator:
     """Anotador real: una llamada con salida estructurada por tabla, en paralelo."""
 
@@ -257,6 +265,11 @@ def build_ingestion_graph(services: IngestionServices) -> Any:
         errors = state.get("pending_errors", {})
         jobs = [(drafts[i], errors.get(i, [])) for i in pending]
         results = services.annotate(jobs, state["pdf_name"], config)
+        service_errors = [r for r in results if isinstance(r, Exception) and is_service_error(r)]
+        if results and len(service_errors) == len(results):
+            # Todas las llamadas fallaron por el servicio (clave inválida, proxy caído…): no es un
+            # problema de los metadatos, así que no se reintenta; la UI lo muestra (FR-043).
+            raise service_errors[0]
         attempts = dict(state.get("attempts", {}))
         candidates: dict[int, TableAnnotation] = {}
         call_errors: dict[int, list[str]] = {}
