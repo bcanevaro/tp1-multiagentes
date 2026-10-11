@@ -81,8 +81,12 @@ _SERVICE_PACKAGES = ("openai", "httpx", "httpcore")
 
 
 def is_service_error(exc: BaseException) -> bool:
-    """Error de conexión o autenticación con el proxy (no de formato de la respuesta)."""
-    return type(exc).__module__.split(".")[0] in _SERVICE_PACKAGES
+    """Error del proxy (conexión, autenticación, modelo caído…), no de formato de la respuesta.
+
+    Se mira toda la jerarquía de la clase: langchain-openai envuelve los errores de `openai` en
+    sus propias clases (p. ej. `OpenAIInvalidRequestError`, subclase de `openai.BadRequestError`).
+    """
+    return any(cls.__module__.split(".")[0] in _SERVICE_PACKAGES for cls in type(exc).__mro__)
 
 
 def llm_annotator(settings: Settings) -> Annotator:

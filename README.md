@@ -7,7 +7,7 @@ Sistema de dos agentes que responde preguntas en lenguaje natural sobre las **ta
 
 Todo se usa desde una app de Streamlit con tres pestañas (**Subir PDF**, **Explorar**, **Preguntar**) y cada ejecución queda trazada en LangSmith.
 
-**Resultados de la evaluación:** 16/16 preguntas correctas sobre un PDF sintético y uno real de INDEC. Detalle, trazas y análisis en [EVALUATION.md](EVALUATION.md). Arquitectura y contratos internos en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+**Resultados de la evaluación:** 20/22 preguntas correctas (corrida sin caché) sobre un PDF sintético y dos reales de INDEC; las dos que fallan dicen que les falta un dato en lugar de dar un número equivocado. Detalle, trazas y análisis en [EVALUATION.md](EVALUATION.md). Arquitectura y contratos internos en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -61,7 +61,7 @@ Copiá `.env.example` como `.env` (en la raíz del repo) y completá las claves.
 | Variable | Obligatoria | Valor de ejemplo / descripción |
 |---|---|---|
 | `LITELLM_BASE_URL`, `LITELLM_API_KEY` | sí | URL y clave del proxy LiteLLM |
-| `LLM_MODEL` | sí | `gpt-4.1-mini` |
+| `LLM_MODEL` | sí | `openai/gpt-4.1-mini` (el nombre exacto sale de `scripts/check_services.py`) |
 | `EMBEDDING_MODEL`, `EMBEDDING_DIM` | sí | `text-embedding-3-small`, `1536` |
 | `LLM_STRUCTURED_METHOD` | no | `function_calling` (también `json_schema` o `json_mode`) |
 | `LLM_CODE_MODEL` | no | otro modelo solo para generar código; vacío = `LLM_MODEL` |
@@ -116,7 +116,7 @@ La barra lateral muestra la configuración activa (modelos, índice, sandbox, tr
 
 ```bash
 # Ingerir uno o varios PDF
-uv run python -m agents.ingestion.cli data/sample_pdfs/informe_sintetico.pdf data/sample_pdfs/indec_ica.pdf
+uv run python -m agents.ingestion.cli data/sample_pdfs/informe_sintetico.pdf data/sample_pdfs/indec_ica.pdf data/sample_pdfs/indec_ipc.pdf
 
 # Preguntar
 uv run python -m agents.analyst.cli "¿Cuál fue el total de exportaciones de la provincia en 2023, en millones de dólares?"
@@ -276,7 +276,7 @@ Cada ingesta aparece en LangSmith como `ingest:<nombre del PDF>` y cada pregunta
 - **El programa carga las tablas por id** (`load_table("…")`), sin rutas: un preludio fijo prepara el entorno y ejecuta el programa generado, así los errores señalan líneas del programa y el modelo puede corregirlas.
 
 ### Servicios y configuración
-- **Los modelos por defecto son `gpt-4.1-mini` y `text-embedding-3-small` (1536 dimensiones)**: entre los del proxy, son baratos por llamada, aceptan temperatura 0 y salida estructurada; para textos cortos de metadatos un embedding más grande no mostraba beneficio. Cambiar el modelo de embeddings obliga a crear otro índice y volver a ingerir.
+- **Los modelos por defecto son `gpt-4.1-mini` y `text-embedding-3-small` (1536 dimensiones)**: entre los del proxy, son baratos por llamada, aceptan temperatura 0 y salida estructurada; para textos cortos de metadatos un embedding más grande no mostraba beneficio. Cambiar el modelo de embeddings obliga a crear otro índice y volver a ingerir. En octubre de 2026 el proxy dejó de atender el alias `gpt-4.1-mini` y el mismo modelo pasó a llamarse `openai/gpt-4.1-mini`; los modelos `gpt-5*` no sirven tal cual porque el código usa temperatura 0.
 - **Todo acceso al LLM pasa por un único módulo** que apunta al proxy, aplica el método de salida estructurada configurado (`LLM_STRUCTURED_METHOD`, porque no todos los modelos del proxy soportan los mismos) y una caché propia en SQLite de respuestas y embeddings, en lugar de la de `langchain-community`, que está siendo discontinuada.
 - **La dimensión de los embeddings se verifica** contra `EMBEDDING_DIM` y contra el índice existente antes de escribir nada.
 - **La UI llama a los servicios a través de un módulo intermedio** (`ui/runtime.py`) para poder testear la app completa con servicios simulados, y clasifica cada error por el servicio que lo causó (LiteLLM, Pinecone, sandbox, configuración).
@@ -285,9 +285,9 @@ Cada ingesta aparece en LangSmith como `ingest:<nombre del PDF>` y cada pregunta
 
 ## Evaluación
 
-`eval/questions.yaml` tiene 16 preguntas con estado y valores esperados: 11 sobre `informe_sintetico.pdf` (un anuario ficticio generado por `scripts/make_sample_pdf.py` con casos difíciles a propósito: tabla multipágina, encabezado de dos niveles, una tabla que no cubre el último año, desempleo por departamento sin promedio provincial, salarios sin aclarar si son nominales o reales) y 5 sobre `indec_ica.pdf` (Intercambio comercial argentino de INDEC, cifras de agosto de 2026). Cubren respuestas de una y de varias tablas, conversiones de escala, períodos y entidades faltantes, conversiones que requieren datos externos, un valor de comparación inexistente y preguntas sin ninguna tabla relacionada.
+`eval/questions.yaml` tiene 22 preguntas con estado y valores esperados: 11 sobre `informe_sintetico.pdf` (un anuario ficticio generado por `scripts/make_sample_pdf.py` con casos difíciles a propósito: tabla multipágina, encabezado de dos niveles, una tabla que no cubre el último año, desempleo por departamento sin promedio provincial, salarios sin aclarar si son nominales o reales) 5 sobre `indec_ica.pdf` (Intercambio comercial argentino de INDEC, cifras de agosto de 2026) y 6 sobre `indec_ipc.pdf` (Índice de precios al consumidor de INDEC, agosto de 2026; escritas antes de correrlas por primera vez). Cubren respuestas de una y de varias tablas, conversiones de escala, períodos y entidades faltantes, conversiones que requieren datos externos, un valor de comparación inexistente y preguntas sin ninguna tabla relacionada.
 
-Una respuesta es correcta si el estado coincide y cada valor esperado aparece en los resultados del código con tolerancia relativa de 0,5 % (absoluta de 0,01 si el esperado es 0). Resultado actual: **16/16**. El reporte completo, las trazas representativas y un análisis de cómo se llegó a ese número (y de qué no mide) están en [EVALUATION.md](EVALUATION.md). Los valores esperados del PDF sintético se verifican en los tests contra los datos que generaron el PDF, y los de INDEC contra las tablas extraídas.
+Una respuesta es correcta si el estado coincide y cada valor esperado aparece en los resultados del código con tolerancia relativa de 0,5 % (absoluta de 0,01 si el esperado es 0). Resultado actual: **20/22**, en una corrida sin caché (el resultado varía algo entre corridas porque el modelo no es determinístico). El reporte completo, las trazas representativas y un análisis de cómo se llegó a ese número (y de qué no mide) están en [EVALUATION.md](EVALUATION.md). Para actualizar ese análisis sin volver a correr las preguntas: `uv run python -m eval.run_local --solo-notas`. Los valores esperados del PDF sintético se verifican en los tests contra los datos que generaron el PDF, y los de INDEC contra las tablas extraídas.
 
 En LangSmith, `eval.run_langsmith` crea el dataset `mas-tp-tablas-preguntas` y corre un experimento con evaluadores automáticos de estado, valores y corrección, más la exactitud del experimento.
 
@@ -302,7 +302,9 @@ En LangSmith, `eval.run_langsmith` crea el dataset `mas-tp-tablas-preguntas` y c
 - **El subproceso aísla parcialmente** (en Windows no puede impedir del todo el acceso a archivos o red de un código malicioso que pase el filtro). Para uso real, Docker.
 - **Los chequeos de cobertura se basan en palabras.** Una pregunta que pide un valor de comparación o un ajuste por inflación con otras palabras depende solo del criterio del LLM.
 - **No hace conversiones con datos externos**: tipo de cambio, inflación o per cápita sin una tabla indexada que tenga el dato. Es una decisión, no un error.
-- **La evaluación es chica** (16 preguntas) y el sistema se ajustó con ellas; ver el análisis en [EVALUATION.md](EVALUATION.md).
+- **La evaluación es chica** (22 preguntas) y el sistema se ajustó con ellas; ver el análisis en [EVALUATION.md](EVALUATION.md).
+- **Las respuestas varían entre corridas.** Con temperatura 0 el modelo igual puede elegir otras tablas o redactar distinto el plan; en las corridas observadas, cuando eso sale mal la respuesta termina en `partial` o `cannot_answer`, no en un número equivocado.
+- **IPC de INDEC:** en el Cuadro 6 una columna sale corrida (los valores nacionales quedan bajo otro encabezado), en el Cuadro 13 las regiones salen sin nombre (`Porcentaje (2)`, …) y PyMuPDF lee "geográfica" como "geográfcia" en los encabezados.
 - **El historial de preguntas vive en la sesión del navegador** y se pierde al recargar.
 - **Con `LLM_CACHE=true` las preguntas repetidas devuelven la respuesta guardada**: para obtener respuestas nuevas, borrá `.cache/`.
 
@@ -338,7 +340,7 @@ sandbox/Dockerfile        Imagen del sandbox
 eval/                     Preguntas, corrección, evaluación local y en LangSmith, notas del análisis
 scripts/                  Chequeo de servicios, PDF sintético y sus datos, PDFs de casos borde,
                           exportación de los diagramas y publicación de trazas
-data/sample_pdfs/         PDF sintético y PDF de INDEC
+data/sample_pdfs/         PDF sintético y dos PDF de INDEC (comercio exterior e IPC)
 docs/ARCHITECTURE.md      Estado de los grafos, contratos y almacenamiento
 docs/graphs/              Diagramas Mermaid generados con draw_mermaid()
 tests/                    Tests (sin red): extracción, ingesta, sandbox, analista, UI y evaluación
@@ -351,5 +353,5 @@ Los diagramas de este README se regeneran con `uv run python scripts/export_grap
 ## Créditos
 
 - Librerías: [LangGraph](https://github.com/langchain-ai/langgraph), [LangChain](https://github.com/langchain-ai/langchain) (`langchain-openai`), [LangSmith](https://smith.langchain.com), [Pinecone](https://www.pinecone.io), [Streamlit](https://streamlit.io), [PyMuPDF](https://pymupdf.readthedocs.io), [pandas](https://pandas.pydata.org), [pyarrow](https://arrow.apache.org), [Pydantic](https://docs.pydantic.dev), [ReportLab](https://www.reportlab.com) (PDF sintético), pytest, ruff, mypy y uv. Se consultó su documentación oficial; no se copió código de tutoriales ni de otros proyectos.
-- PDF real: "Intercambio comercial argentino", Instituto Nacional de Estadística y Censos (INDEC), publicación pública descargada de [indec.gob.ar](https://www.indec.gob.ar).
+- PDF reales: "Intercambio comercial argentino" e "Índice de precios al consumidor" (agosto de 2026), Instituto Nacional de Estadística y Censos (INDEC), publicaciones públicas descargadas de [indec.gob.ar](https://www.indec.gob.ar).
 - El PDF sintético y sus datos ("Provincia de San Aurelio") son ficticios y se generan con el código del repositorio.

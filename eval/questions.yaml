@@ -188,3 +188,74 @@ questions:
     expected_missing: "El origen de las exportaciones por región solo se publica para 2026; no hay dato de Patagonia en agosto de 2025."
     tables: ["Cuadro 9"]
     kind: falta un período para una parte de la pregunta
+
+  # ---------------------------------------------------------------------------------------
+  # PDF real: INDEC, Índice de precios al consumidor (indec_ipc.pdf, cifras de agosto de 2026).
+  # Valores verificados contra el texto del PDF (Cuadros 1, 2 y 3).
+  # ---------------------------------------------------------------------------------------
+
+  - id: ipc-01
+    doc: indec_ipc.pdf
+    question: "¿Cuál fue la variación mensual del IPC nivel general a nivel nacional en agosto de 2026?"
+    expected_status: answered
+    expected_values:
+      - label: "Variación mensual del IPC nivel general nacional, agosto de 2026"
+        value: 1.7
+        unit: "%"
+    tables: ["Cuadro 1"]
+    kind: una tabla real; dato directo
+
+  - id: ipc-02
+    doc: indec_ipc.pdf
+    question: "En agosto de 2026, ¿qué región tuvo la mayor variación mensual en Vivienda, agua, electricidad, gas y otros combustibles, y por cuántos puntos superó al dato nacional?"
+    expected_status: answered
+    expected_values:
+      - label: "Mayor variación mensual en Vivienda, agua, electricidad, gas y otros combustibles (Noreste)"
+        value: 4.0
+        unit: "%"
+      - label: "Diferencia con la variación nacional (2,8 %)"
+        value: 1.2
+        unit: "puntos porcentuales"
+    tables: ["Cuadro 1"]
+    kind: una tabla real; máximo entre regiones y diferencia con un valor de comparación que sí está en la tabla
+
+  - id: ipc-03
+    doc: indec_ipc.pdf
+    question: "¿Cuántos puntos porcentuales de diferencia hubo entre la variación interanual y la variación acumulada del año del IPC nivel general nacional en agosto de 2026?"
+    expected_status: answered
+    expected_values:
+      - label: "Variación interanual (33,5 %) menos variación acumulada desde diciembre de 2025 (21,3 %)"
+        value: 12.2
+        unit: "puntos porcentuales"
+    tables: ["Cuadro 3", "Cuadro 2"]
+    kind: multitabla real; cada medida está en un cuadro distinto
+
+  - id: ipc-04
+    doc: indec_ipc.pdf
+    question: "¿Cuál fue la variación mensual del IPC en septiembre de 2026?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "El informe llega hasta agosto de 2026; no hay datos de septiembre."
+    tables: ["Cuadro 1"]
+    kind: falta un período
+
+  - id: ipc-05
+    doc: indec_ipc.pdf
+    question: "¿Cuál fue la variación mensual del IPC en la provincia de Córdoba en agosto de 2026?"
+    expected_status: cannot_answer
+    expected_values: []
+    expected_missing: "El IPC se publica por regiones (GBA, Pampeana, Noreste, Noroeste, Cuyo, Patagonia), no por provincia; no se reemplaza por la región Pampeana."
+    tables: ["Cuadro 1"]
+    kind: falta una entidad (existe una entidad cercana que no se debe usar)
+
+  - id: ipc-06
+    doc: indec_ipc.pdf
+    question: "¿Cuál fue la variación mensual del IPC nivel general nacional en agosto y en septiembre de 2026?"
+    expected_status: partial
+    expected_values:
+      - label: "Variación mensual del IPC nivel general nacional, agosto de 2026"
+        value: 1.7
+        unit: "%"
+    expected_missing: "No hay datos de septiembre de 2026."
+    tables: ["Cuadro 1"]
+    kind: falta un período para una parte de la pregunta

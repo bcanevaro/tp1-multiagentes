@@ -53,8 +53,38 @@ def is_checkable_period(period: str) -> bool:
     return bool(re.search(r"\d", n)) or any(re.search(rf"\b{m}\b", n) for m in _MONTHS)
 
 
+# Palabras que no identifican una entidad: artículos/preposiciones y sustantivos genéricos que
+# el plan a veces mete en una entidad ("dato nacional", "a nivel nacional", "valor total").
+_ENTITY_STOPWORDS = {
+    "de", "del", "la", "las", "el", "los", "y", "e", "o", "u", "en", "a", "al", "por", "para",
+    "con", "su", "sus",
+    "dato", "datos", "valor", "valores", "cifra", "cifras", "nivel", "numero", "cantidad",
+}  # fmt: skip
+_GENERIC_WORDS = {w for w in GENERIC_ENTITIES if " " not in w}
+
+
+def _entity_tokens(entity: str) -> list[str]:
+    """Palabras que identifican la entidad ("IPC nivel general nacional" -> ipc, nivel, general)."""
+    words = re.findall(r"\w+", normalize(entity))
+    return [w for w in words if w not in _ENTITY_STOPWORDS and w not in _GENERIC_WORDS]
+
+
 def is_checkable_entity(entity: str) -> bool:
-    return normalize(entity) not in GENERIC_ENTITIES
+    return normalize(entity) not in GENERIC_ENTITIES and bool(_entity_tokens(entity))
+
+
+def _entity_present(entity: str, haystack: list[str]) -> bool:
+    """La entidad está si aparece como frase o si cada palabra que la identifica aparece en
+    alguna parte de las tablas. El plan a veces junta en una "entidad" la fila, la columna y el
+    alcance ("IPC nivel general nacional"), que en la tabla están separados: fila "Nivel
+    general", columna "Nacional", "IPC" en el nombre. Sigue sin estar si falta una palabra
+    propia ("Río Seco" cuando ninguna tabla dice "Seco")."""
+    if _present(entity, haystack):
+        return True
+    return all(
+        any(re.search(rf"\b{re.escape(w)}\b", item) for item in haystack)
+        for w in _entity_tokens(entity)
+    )
 
 
 def _present(term: str, haystack: list[str]) -> bool:
@@ -75,12 +105,26 @@ def _period_present(period: str, haystack: list[str]) -> bool:
     las tablas reales el mes suele ser una fila y el año, una columna o el epígrafe."""
     n = normalize(period)
     years = _YEAR_TOKEN_RE.findall(n)
-    months = [m for m in _MONTHS if re.search(rf"\b{m}\b", n)]
+    found = sorted(
+        (m.start(), name) for name in _MONTHS for m in [re.search(rf"\b{name}\b", n)] if m
+    )
+    months = [name for _, name in found]
     if not years and not months:
         return _present(period, haystack)
+    if len(months) >= 2 and months[0] == "enero" and _year_to_date_present(months[-1], haystack):
+        months = months[
+            1:
+        ]  # "enero-agosto" = "acumulado hasta agosto": el acumulado empieza en enero
     return all(any(y in item for item in haystack) for y in years) and all(
         any(re.search(rf"\b{m}\b", item) for item in haystack) for m in months
     )
+
+
+def _year_to_date_present(last_month: str, haystack: list[str]) -> bool:
+    """¿Alguna tabla informa el acumulado del año hasta `last_month`? ("acumulado hasta agosto",
+    "acumulado a agosto de 2026", "enero-agosto"…)."""
+    pattern = rf"\b(acumulad\w*|hasta)\b.*\b{last_month}\b"
+    return any(re.search(pattern, item) for item in haystack)
 
 
 def _describe(tables: list[Candidate]) -> str:
@@ -101,7 +145,9 @@ def check_periods_and_entities(
         return cov
     haystack, text_haystack = _haystack(tables), _haystack(tables, with_text=True)
     absent = [p for p in sub.periods if is_checkable_period(p) and not _period_present(p, haystack)]
-    absent += [e for e in sub.entities if is_checkable_entity(e) and not _present(e, text_haystack)]
+    absent += [
+        e for e in sub.entities if is_checkable_entity(e) and not _entity_present(e, text_haystack)
+    ]
     if not absent:
         return cov
     kind = "el período" if all(a in sub.periods for a in absent) else "la entidad"

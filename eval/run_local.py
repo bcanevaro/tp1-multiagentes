@@ -266,6 +266,20 @@ def evaluate(
     return runs
 
 
+RESULTS_HEADING = "\n## Resultados por pregunta"
+
+
+def refresh_notes(report_text: str, notes: str) -> str:
+    """Reemplaza en un reporte ya generado el texto de `eval/notes.md` (lo que va entre la tabla
+    del resumen y "Resultados por pregunta"), sin volver a correr las preguntas."""
+    start = report_text.index("\n## ", report_text.index("\n## Resumen") + 1)
+    end = report_text.index(RESULTS_HEADING)
+    if start > end:  # el reporte no tenía notas
+        start = end
+    block = f"\n\n{notes.strip()}\n" if notes.strip() else "\n"
+    return report_text[:start].rstrip("\n") + block + report_text[end:]
+
+
 def write_outputs(runs: list[QuestionRun], header: dict[str, str], report: Path, raw: Path) -> None:
     notes = NOTES_FILE.read_text(encoding="utf-8") if NOTES_FILE.exists() else ""
     report.write_text(render_report(runs, header, notes) + "\n", encoding="utf-8")
@@ -282,7 +296,20 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--id", action="append", default=[], help="id de una pregunta")
     parser.add_argument("--doc", help="solo las preguntas de este PDF")
     parser.add_argument("--out", type=Path, default=REPORT_FILE, help="archivo del reporte")
+    parser.add_argument(
+        "--solo-notas",
+        action="store_true",
+        help="no corre preguntas: actualiza en el reporte el texto de eval/notes.md",
+    )
     args = parser.parse_args(argv)
+
+    if args.solo_notas:
+        notes = NOTES_FILE.read_text(encoding="utf-8") if NOTES_FILE.exists() else ""
+        args.out.write_text(
+            refresh_notes(args.out.read_text(encoding="utf-8"), notes), encoding="utf-8"
+        )
+        print(f"Notas actualizadas en {args.out.name} (sin volver a evaluar).")
+        return 0
 
     settings = get_settings()
     missing = settings.missing_required("ask")

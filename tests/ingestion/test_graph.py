@@ -221,3 +221,26 @@ def test_service_error_on_every_table_stops_ingestion(tmp_path: Path) -> None:
         ingest_pdf(SAMPLE, services=services)
     assert len(calls) == 1
     assert TableStore(tmp_path).list_tables() == []
+
+
+def test_wrapped_service_error_also_stops_ingestion(tmp_path: Path) -> None:
+    """Corrida real: el proxy respondió 400 "no healthy deployments" y langchain-openai lo
+    envolvió en `OpenAIInvalidRequestError`. Antes no se reconocía como error del servicio y la
+    ingesta reintentaba como si los metadatos fueran inválidos."""
+    import httpx
+    from langchain_openai.chat_models.base import OpenAIInvalidRequestError
+
+    from agents.ingestion.graph import is_service_error
+
+    response = httpx.Response(400, request=httpx.Request("POST", "http://proxy.test/v1"))
+    error = OpenAIInvalidRequestError(
+        message="There are no healthy deployments for this model", response=response, body=None
+    )
+    assert is_service_error(error)
+    assert not is_service_error(ValueError("metadatos inválidos"))
+
+    services = make_services(tmp_path)
+    services.annotate = lambda jobs, pdf_name, config: [error for _ in jobs]
+    with pytest.raises(OpenAIInvalidRequestError):
+        ingest_pdf(SAMPLE, services=services)
+    assert TableStore(tmp_path).list_tables() == []

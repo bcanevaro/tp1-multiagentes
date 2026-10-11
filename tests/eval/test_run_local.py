@@ -10,7 +10,13 @@ from typing import Any
 import pytest
 
 from agents.analyst.schemas import QueryPlan, Selection
-from eval.run_local import evaluate, missing_docs, render_report, write_outputs
+from eval.run_local import (
+    evaluate,
+    missing_docs,
+    refresh_notes,
+    render_report,
+    write_outputs,
+)
 from services.config import Settings
 from tests.analyst.fakes import (
     FINANCE_ID,
@@ -148,3 +154,23 @@ def test_question_that_raises_is_reported_as_error(
     assert run.status == "error" and not run.score.correct
     assert "proxy caído" in (run.error or "")
     assert "Error:" in render_report([run], {})
+
+
+@pytest.mark.parametrize("old_notes", ["", "## Notas viejas\n\nTexto viejo."])
+def test_refresh_notes_matches_a_fresh_render(old_notes: str) -> None:
+    """`--solo-notas`: cambiar el análisis no obliga a volver a correr las preguntas."""
+    from eval.run_local import QuestionRun
+    from eval.scoring import Score
+
+    runs = [
+        QuestionRun(
+            question=QUESTIONS[0],
+            status="error",
+            score=Score(False, False, False, []),
+            error="sin servicio",
+        )
+    ]
+    header = {"Fecha": "2026-10-11"}
+    new_notes = "## Trazas representativas\n\n- una\n\n## Análisis\n\nTexto nuevo."
+    old = render_report(runs, header, old_notes)
+    assert refresh_notes(old, new_notes) == render_report(runs, header, new_notes)

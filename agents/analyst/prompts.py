@@ -65,6 +65,16 @@ NO está cubierta, aunque otras partes sí lo estén.
 4. El significado o la unidad de una columna necesaria no es claro y la elección cambia el \
 resultado (p. ej. no se sabe si un monto es nominal o real y la pregunta pide valores reales).
 
+Si el cálculo necesita un total, un denominador o un valor que no está en la tabla elegida \
+(p. ej. el total de exportaciones del mes para calcular una participación), buscalo en las \
+otras candidatas y agregá esa tabla a `table_ids`; la subpregunta está cubierta si entre todas \
+las tablas elegidas están todos los datos.
+
+Equivalencias habituales en informes estadísticos: "acumulado del año", "acumulado hasta \
+<mes>", "enero-<mes>" y "respecto a diciembre del año anterior" son el mismo período; \
+"interanual" es "respecto al mismo mes del año anterior". Usá el epígrafe del PDF para \
+distinguir tablas con nombres parecidos.
+
 Si una columna usada tiene unidad "desconocida" o tipo "unknown" pero eso no cambia el \
 resultado (p. ej. una proporción entre valores de la misma columna), explicalo en \
 `ambiguity_ok`.
@@ -82,6 +92,7 @@ def describe_table(meta: TableMetadata, preview: str) -> str:
     parts = [
         f"table_id: {meta.table_id}",
         f"Nombre: {meta.name}",
+        *([f"Epígrafe en el PDF: {meta.caption}"] if meta.caption else []),
         f"Fuente: {meta.source.pdf_name}, página(s) {', '.join(map(str, meta.source.pages))}",
         f"Descripción: {meta.description}",
         f"Filas: {meta.n_rows}. Columnas:\n{columns}",
@@ -154,6 +165,8 @@ en "label": [{{"label": "Norte", "value": 9.8}}]. "value" nunca es texto. Conver
 float(); nunca NaN.
    - Proporciones, participaciones, variaciones y tasas: en porcentaje (0-100) con \
 "unit": "%", salvo que la subpregunta pida otra unidad.
+   - Diferencias entre dos porcentajes: "unit": "puntos porcentuales". "label" dice qué es el \
+valor (p. ej. "Diferencia Noreste − Nacional"), no solo el nombre de una categoría.
    - missing: [{{"subquestion_id": "q2", "reason": "..."}}]
    - conversions: textos que describan las conversiones aplicadas (p. ej. "miles de toneladas \
 → toneladas"), o [] si no hubo.

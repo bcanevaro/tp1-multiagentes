@@ -158,6 +158,82 @@ def test_entity_found_in_description_counts() -> None:
     assert result.covered
 
 
+def _ipc_candidate() -> list[Candidate]:
+    df = pd.DataFrame(
+        {
+            "Nivel general y divisiones": ["Nivel general", "Vivienda, agua, electricidad"],
+            "Nacional | Porcentaje": [1.7, 2.8],
+            "Región | Noreste | Porcentaje": [1.8, 4.0],
+        }
+    )
+    meta = _meta(
+        "ipc-t01",
+        "Variación mensual del IPC por divisiones y regiones, agosto 2026",
+        [
+            _col("Nivel general y divisiones"),
+            _col("Nacional | Porcentaje", "%", "porcentaje"),
+            _col("Región | Noreste | Porcentaje", "%", "porcentaje"),
+        ],
+        df,
+        5,
+    )
+    return [Candidate(table_id="ipc-t01", score=1.0, metadata=meta, preview_markdown="")]
+
+
+@pytest.mark.parametrize(
+    "entity",
+    ["IPC nivel general nacional", "nivel nacional", "nivel general nacional", "dato nacional"],
+)
+def test_composite_entity_is_present_if_each_word_is(entity: str) -> None:
+    """Corrida real (ipc-01/03/06): el plan juntó fila, columna y alcance en una sola entidad."""
+    q = sub("q1", f"Variación mensual del {entity}", entities=[entity])
+    [result] = apply_deterministic_checks(
+        [q], [cover("q1", ["ipc-t01"], ["Nacional | Porcentaje"])], _ipc_candidate()
+    )
+    assert result.covered, result.missing
+
+
+@pytest.mark.parametrize("entity", ["Córdoba", "provincia de Córdoba", "Noreste Grande"])
+def test_entity_with_an_absent_word_is_still_missing(entity: str) -> None:
+    q = sub("q1", f"Variación mensual en {entity}", entities=[entity])
+    [result] = apply_deterministic_checks(
+        [q], [cover("q1", ["ipc-t01"], ["Nacional | Porcentaje"])], _ipc_candidate()
+    )
+    assert not result.covered
+
+
+def _ytd_candidate(periods: list[str]) -> list[Candidate]:
+    df = pd.DataFrame({"Provincia": ["Santa Fe", "Total"], "Millones de USD": [13746.0, 67248.0]})
+    meta = _meta(
+        "ica-t10",
+        "Origen de las exportaciones por provincia",
+        [_col("Provincia"), _col("Millones de USD", "millones de USD", "nominal")],
+        df,
+        30,
+    ).model_copy(update={"periods_covered": periods})
+    return [Candidate(table_id="ica-t10", score=1.0, metadata=meta, preview_markdown="")]
+
+
+def test_january_to_month_range_matches_year_to_date_table() -> None:
+    """Corrida real (ind-01): el plan escribió "enero-agosto 2026" y la tabla dice "acumulado
+    hasta agosto de 2026", sin nombrar enero."""
+    q = sub("q1", "Participación de Santa Fe", periods=["enero-agosto 2026"], entities=["Santa Fe"])
+    [result] = apply_deterministic_checks(
+        [q],
+        [cover("q1", ["ica-t10"], ["Millones de USD"])],
+        _ytd_candidate(["acumulado hasta agosto de 2026"]),
+    )
+    assert result.covered, result.missing
+
+
+def test_january_to_month_range_still_needs_year_to_date_or_january() -> None:
+    q = sub("q1", "Exportaciones", periods=["enero-agosto 2026"])
+    [result] = apply_deterministic_checks(
+        [q], [cover("q1", ["ica-t10"], ["Millones de USD"])], _ytd_candidate(["agosto de 2026"])
+    )
+    assert not result.covered and "enero-agosto 2026" in result.missing
+
+
 def test_vc047_reference_average_not_in_table_uncovers() -> None:
     """syn-04 / BR-013: "promedio provincial" sin fila de total o promedio → no cubierta."""
     q1 = sub("q1", "Departamento con la tasa de desempleo más alta en 2023", periods=["2023"])
