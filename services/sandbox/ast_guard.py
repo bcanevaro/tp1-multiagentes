@@ -4,7 +4,8 @@ Analiza el AST antes de ejecutar y rechaza el programa si:
 - importa un módulo fuera de la lista permitida (BR-020);
 - usa funciones que permiten escapar del sandbox (`eval`, `exec`, `open`, `__import__`, …);
 - accede a atributos "dunder" (`obj.__class__`, `__globals__`, …);
-- llama a métodos de pandas que leen o escriben archivos (`to_csv`, `read_csv`, …);
+- llama a métodos de pandas o numpy que leen o escriben archivos (`to_csv`, `read_csv`,
+  `np.loadtxt`, `np.save`, …);
 - contiene URLs (textos con "://").
 
 Es una primera barrera: el aislamiento real lo da el backend (Docker sin red, o subproceso
@@ -30,7 +31,10 @@ FORBIDDEN_NAMES = frozenset(
 # archivos (os.rename, os.remove, Path.rename) no son alcanzables sin importar os/pathlib.
 _IO_ATTR_RE = re.compile(
     r"^(read_\w+|to_(csv|parquet|excel|pickle|json|sql|hdf|feather|stata|html|xml|latex|"
-    r"clipboard|orc|gbq)|system|popen|spawn\w*|fork|unlink|rmdir)$"
+    r"clipboard|orc|gbq)|system|popen|spawn\w*|fork|unlink|rmdir|"
+    # E/S de archivos de numpy: np.load, np.loadtxt, np.fromfile, np.save, arr.tofile, …
+    r"load|loadtxt|genfromtxt|fromfile|fromregex|save|savez\w*|savetxt|tofile|dump|"
+    r"\w*memmap|DataSource)$"
 )
 
 

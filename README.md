@@ -135,6 +135,12 @@ uv run python -m agents.ingestion.extract data/sample_pdfs/indec_ica.pdf
 uv run python -m eval.run_local       # escribe EVALUATION.md y eval/last_run.json
 uv run python -m eval.run_langsmith   # dataset + experimento en LangSmith
 ```
+
+Para publicar una traza con link público (se abre sin cuenta de LangSmith):
+```bash
+uv run python scripts/share_trace.py --pdf data/sample_pdfs/indec_ica.pdf   # traza de una ingesta
+uv run python scripts/share_trace.py --id syn-10                            # traza de una pregunta
+```
 Los PDF de las preguntas tienen que estar ingeridos en la misma PC (el script avisa si falta alguno).
 
 ---
@@ -331,7 +337,7 @@ services/sandbox/         Filtro estático, backends Docker y subproceso, contra
 sandbox/Dockerfile        Imagen del sandbox
 eval/                     Preguntas, corrección, evaluación local y en LangSmith, notas del análisis
 scripts/                  Chequeo de servicios, PDF sintético y sus datos, PDFs de casos borde,
-                          exportación de los diagramas
+                          exportación de los diagramas y publicación de trazas
 data/sample_pdfs/         PDF sintético y PDF de INDEC
 docs/ARCHITECTURE.md      Estado de los grafos, contratos y almacenamiento
 docs/graphs/              Diagramas Mermaid generados con draw_mermaid()

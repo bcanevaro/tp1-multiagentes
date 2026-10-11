@@ -30,6 +30,7 @@ Links públicos de LangSmith (se abren sin cuenta):
 
 - **Respuesta completa con dos tablas del PDF real** (`ind-03`, peso del sector automotriz en las exportaciones de agosto de 2026): https://smith.langchain.com/public/2183c165-d3cf-4e3b-9412-a88335229d5a/r/8c6c0931-9f58-49dc-8e36-35e389bf9951
 - **Respuesta parcial** (`syn-04`: responde qué departamento tuvo más desempleo y explica que ninguna tabla informa el promedio provincial, sin calcularlo): https://smith.langchain.com/public/4ade60ee-1d51-48d7-8b55-30f9750d0151/r/50298fd4-00bd-4e28-8fcd-1797ff0d8ce0
+- **Ingesta completa del PDF real** (`indec_ica.pdf`: cada nodo del grafo de Ingesta aparece como un span —carga, extracción, unión entre páginas, contexto, enriquecimiento con el LLM (una llamada por tabla, en paralelo), validación e indexación en Pinecone—; 11 tablas indexadas): https://smith.langchain.com/public/6745c41c-325b-4c47-a6e2-f46ed862311b/r
 - **Con reintentos:** en la corrida final ninguna pregunta necesitó reintentar el código, así que no hay traza de este tipo en el reporte. Durante el desarrollo sí hubo reintentos reales: el filtro de seguridad rechazó un programa que usaba `exit()` y otro que llamaba a `.rename` (que se parecía a una operación de archivos), y en un tercer caso el código devolvió un texto donde iba un número; en los tres el segundo programa, generado con el error del primero, respondió bien. Los tests del grafo verifican ese ciclo (un fallo seguido de un acierto, y fallos hasta agotar los reintentos).
 
 ## Análisis

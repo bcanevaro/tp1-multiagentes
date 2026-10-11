@@ -1,0 +1,5 @@
+# Archivos binarios: git no tiene que convertir sus saltos de línea (CRLF/LF).
+*.pdf     binary
+*.parquet binary
+*.png     binary
+*.jpg     binary

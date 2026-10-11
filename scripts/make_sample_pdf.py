@@ -361,9 +361,7 @@ def _locate_pages(pdf_path: Path, tables: list[TableTruth]) -> int:
             first_needle = t.caption.split(".")[0] + "."  # "Cuadro N."
             last_needle = t.rows_text[-1][-1]
             start = next(p.number for p in doc if p.search_for(first_needle))
-            end = next(
-                p.number for p in doc if p.number >= start and p.search_for(last_needle)
-            )
+            end = next(p.number for p in doc if p.number >= start and p.search_for(last_needle))
             t.pages = list(range(start + 1, end + 2))
         return int(doc.page_count)
     finally:
@@ -390,9 +388,7 @@ def build(pdf_path: Path = PDF_PATH, truth_path: Path = TRUTH_PATH) -> dict[str,
         if pdf_path.is_relative_to(ROOT)
         else pdf_path.name,
         "page_count": page_count,
-        "tables": [
-            {**asdict(t), "n_rows": t.n_rows, "n_cols": t.n_cols} for t in tables
-        ],
+        "tables": [{**asdict(t), "n_rows": t.n_rows, "n_cols": t.n_cols} for t in tables],
     }
     truth_path.parent.mkdir(parents=True, exist_ok=True)
     truth_path.write_text(json.dumps(truth, ensure_ascii=False, indent=2), encoding="utf-8")
